@@ -48,25 +48,15 @@ def login():
 
     
     
-def expense_tracker(username):
-    users = load_users()
-    while True:
-        print('\nExpense Tracker Menu:')
-        print('1. Add Expense')
-        print('2. View Expenses')
-        print('3. Logout')
-        choice = input('Select an option: ')
-        if choice == '1':
-            print('Adding a new expense:')
-        elif choice == '2':
-            print('\nYour Expenses:')
-           
-        elif choice == '3':
-            print('Logging out...')
-            break
-        else:
-            print('Invalid choice. Please try again.')
-
+def HomePage():
+    print('Welcome to your Expense Tracker Home Page!')
+    print( f'Hello,{user}!')
+    print('1. Transactions ')
+    print('2. Reports')
+    print('3. Switch User')
+    print('4. Logout ')
+    choice = input('Please select an option: ')
+    
 
 
 if __name__ == '__main__': # Main program loop
@@ -75,11 +65,11 @@ if __name__ == '__main__': # Main program loop
         if choice == '1':
             user = login()
             if user:
-                expense_tracker(user)
+                HomePage(user)
         elif choice == '2':
             user = register()
             if user:
-                expense_tracker(user)
+                HomePage(user)
         elif choice == '3':
             print('Exiting the program. Goodbye!')
             break
