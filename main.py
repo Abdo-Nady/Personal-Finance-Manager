@@ -102,121 +102,137 @@ def login():
     
     
 def HomePage(user):
-    print('Welcome to your Expense Tracker Home Page!')
-    print( f'Hello,{user}!')
-    print('1. Transactions ')
-    print('2. Reports')
-    print('3. Switch User')
-    print('4. Logout ')
-    choice = input('Please select an option: ')
-    if choice == '1':
-        Transactions(user)
-    elif choice == '2':
-        Reports(user)
-    elif choice == '3':
-        print('Switching user...')
-        return
-    elif choice == '4':
-        print('Logging out...')
-        return
-    else:
-        print('Invalid choice. Please try again.')
-        HomePage(user)
+    while True:
+        print('\n' + '='*50)
+        print('Welcome to your Expense Tracker Home Page!')
+        print(f'Hello, {user}!')
+        print('='*50)
+        print('1. Transactions')
+        print('2. Reports')
+        print('3. Switch User')
+        print('4. Logout')
+        print('='*50)
+        choice = input('Please select an option: ')
+        
+        if choice == '1':
+            Transactions(user)
+        elif choice == '2':
+            Reports(user)
+        elif choice == '3':
+            print('Switching user...')
+            break  # Exit loop to switch user
+        elif choice == '4':
+            print('Logging out...')
+            break  # Exit loop to logout
+        else:
+            print('Invalid choice. Please try again.')
 
 def Transactions(user):
-    users = load_users()
-    print('Transactions Page')
-    print('1. Add Expense') 
-    print('2. Add Income')
-    print('3. view All Transactions')
-    print('4. Search / Filter Transactions')
-    print('5. Edit or Delete Transaction')
-    print('6. Back to Home Page')
-    choice = input('Please select an option: ')
-    if choice == '1':
-        add_transaction(user, 'expense')
-        print('Expense added successfully!')
-        Transactions(user)
-    elif choice == '2':
-        add_transaction(user, 'income')
-        print('Income added successfully!')
-        Transactions(user)
-    elif choice == '3':
-        print('All Transactions:')
-        with open('transaction.csv', 'r') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                if row['user_id'] == user:
-                    print(row)
-        Transactions(user)
-    elif choice == '4':
-        print('Search / Filter Transactions Page')
-        # Placeholder for search/filter functionality
-        Transactions(user)
-    elif choice == '5':
-        print('All Transactions:')
-        
-        # Load ALL transactions from the file
-        all_transactions = []
-        user_transactions = []
-        
-        # Check if file exists first
-        if not os.path.exists('transaction.csv'):
-            print('No transactions found!')
-            Transactions(user)
-            return
-        
-        with open('transaction.csv', 'r') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                all_transactions.append(row)  # Save ALL transactions
-                if row['user_id'] == user:
-                    user_transactions.append(row)  # Separate user's transactions
-                    print(row)
-        
-        if not user_transactions:
-            print('You have no transactions!')
-            Transactions(user)
-            return
-        
-        txn_id = input('Enter the Transaction ID to edit or delete: ')
-        
-        transaction_found = False
-        for txn in all_transactions:  # Loop through ALL transactions
-            if txn['transaction_id'] == txn_id and txn['user_id'] == user:
-                transaction_found = True
-                action = input('Enter "e" to edit or "d" to delete: ')
-                if action == 'e':
-                    txn['amount'] = input(f'Enter new amount (current: {txn["amount"]}): ') or txn['amount']
-                    txn['category'] = input(f'Enter new category (current: {txn["category"]}): ') or txn['category']
-                    txn['date'] = input(f'Enter new date (current: {txn["date"]}): ') or txn['date']
-                    txn['description'] = input(f'Enter new description (current: {txn["description"]}): ') or txn['description']
-                    txn['payment_method'] = input(f'Enter new payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
-                    print('Transaction updated successfully!')
-                elif action == 'd':
-                    all_transactions.remove(txn)  # Remove from ALL transactions
-                    print('Transaction deleted successfully!')
-                else:
-                    print('Invalid action!')
-                break
-        
-        if not transaction_found:
-            print('Transaction not found or does not belong to you!')
-        
-        # Write back ALL transactions
-        with open('transaction.csv', 'w', newline='') as csvfile:
-            fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            for txn in all_transactions:  # Write ALL transactions back
-                writer.writerow(txn)
-        
-        Transactions(user)
-    elif choice == '6':
-        HomePage(user)  
-    else:
-        print('Invalid choice. Please try again.')
-        Transactions(user)
+    while True:
+        users = load_users()
+        print('Transactions Page')
+        print('1. Add Expense') 
+        print('2. Add Income')
+        print('3. view All Transactions')
+        print('4. Search / Filter Transactions')
+        print('5. Edit or Delete Transaction')
+        print('6. Back to Home Page')
+        choice = input('Please select an option: ')
+        if choice == '1':
+            add_transaction(user, 'expense')
+            print('Expense added successfully!')
+
+        elif choice == '2':
+            add_transaction(user, 'income')
+            print('Income added successfully!')
+  
+        elif choice == '3':
+            print('\n--- All Transactions ---')
+            if not os.path.exists('transaction.csv'):
+                print('No transactions found!')
+            else:
+                with open('transaction.csv', 'r') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    found = False
+                    for row in reader:
+                        if row['user_id'] == user:
+                            print(row)
+                            found = True
+                    if not found:
+                        print('You have no transactions!')
+        elif choice == '4':
+            print('Search / Filter Transactions Page')
+            # Placeholder for search/filter functionality
+        elif choice == '5':
+            edit_or_delete_transaction(user)
+
+        elif choice == '6':
+            print('Returning to Home Page...')
+            break
+  
+        else:
+            print('Invalid choice. Please try again.')
+  
+
+
+def edit_or_delete_transaction(user):
+    print('\n--- All Your Transactions ---')
+    
+    # Load ALL transactions
+    all_transactions = []
+    user_transactions = []
+    
+    if not os.path.exists('transaction.csv'):
+        print('No transactions found!')
+        return
+    
+    with open('transaction.csv', 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            all_transactions.append(row)
+            if row['user_id'] == user:
+                user_transactions.append(row)
+                print(row)
+    
+    if not user_transactions:
+        print('You have no transactions!')
+        return
+    
+    txn_id = input('\nEnter the Transaction ID to edit or delete: ')
+    
+    transaction_found = False
+    for txn in all_transactions:
+        if txn['transaction_id'] == txn_id and txn['user_id'] == user:
+            transaction_found = True
+            action = input('Enter "e" to edit or "d" to delete: ').lower()
+            
+            if action == 'e':
+                print('\n--- Edit Transaction (press Enter to keep current value) ---')
+                txn['amount'] = input(f'Amount (current: {txn["amount"]}): ') or txn['amount']
+                txn['category'] = input(f'Category (current: {txn["category"]}): ') or txn['category']
+                txn['date'] = input(f'Date (current: {txn["date"]}): ') or txn['date']
+                txn['description'] = input(f'Description (current: {txn["description"]}): ') or txn['description']
+                txn['payment_method'] = input(f'Payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
+                print('✅ Transaction updated successfully!')
+            elif action == 'd':
+                all_transactions.remove(txn)
+                print('✅ Transaction deleted successfully!')
+            else:
+                print('❌ Invalid action!')
+                return
+            break
+    
+    if not transaction_found:
+        print('❌ Transaction not found or does not belong to you!')
+        return
+    
+    # Write back ALL transactions
+    with open('transaction.csv', 'w', newline='') as csvfile:
+        fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for txn in all_transactions:
+            writer.writerow(txn)
 
 def add_transaction(user, type_):
     transaction_id = f'TXN{int(datetime.datetime.now().timestamp())}'
