@@ -9,30 +9,7 @@ from decimal import Decimal
 
 USERS_FILE = "users.json"
 
-# # Transaction Structure
-# transaction = {
-#                     "transaction_id": "TXN001",
-#                     "user_id": "UUID",
-#                     "type": "expense",  # or "income"
-#                     "amount": 50.00,
-#                     "category": "Food",
-#                     "date": "2025-10-12",
-#                     "description": "Lunch at restaurant",
-#                     "payment_method": "Credit Card"
-                
-# }
-
-# # User Structure 
-# user = {
-#                                 "user_id": "UUID",
-#                                 "name": "John Doe",
-#                                 "password": "hashed_password",
-#                                 "currency": "USD"
-                            
-# }
-
-
-def menu():
+def menu(): # Main menu function
     print('Welcome to the Expense Tracker!')
     print('1. Login')
     print('2. Register')
@@ -49,21 +26,21 @@ def load_users(): #a function to load users from the JSON file
     except json.JSONDecodeError:    
         return []
     
-def save_users(users):
+def save_users(users): #a function to save users to the JSON file
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=4)
 
-def hash_password(password):
+def hash_password(password): #function to hash passwords
     """Hash a password using bcrypt"""
     # Convert password to bytes and hash it
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8') # Convert back to string for storage
 
-def verify_password(password, hashed_password):
+def verify_password(password, hashed_password): #function to verify passwords
     """Verify a password against its hash"""
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')) # Convert back to bytes for verification
 
-def register():
+def register(): # Function to handle user registration
     users = load_users()
     username = input('Enter a username: ')
     if any(u["name"] == username for u in users):
@@ -88,7 +65,7 @@ def register():
  
 
 
-def login():
+def login(): # Function to handle user login
     users = load_users()
     username = input('Enter your username: ')
     password = input('Enter your password: ')
@@ -104,7 +81,7 @@ def login():
 
     
     
-def HomePage(user):
+def HomePage(user): # Function for the home page
     while True:
         print('\n' + '='*50)
         print('Welcome to your Expense Tracker Home Page!')
@@ -130,7 +107,7 @@ def HomePage(user):
         else:
             print('Invalid choice. Please try again.')
 
-def Transactions(user):
+def Transactions(user): # Function to handle transactions
     while True:
         print('\n' + '='*50) 
         print('Transactions Page')
@@ -183,7 +160,7 @@ def Transactions(user):
   
 
 
-def edit_or_delete_transaction(user):
+def edit_or_delete_transaction(user): # Function to edit or delete a transaction
     print('\n--- All Your Transactions ---')
     
     # Load ALL transactions
@@ -274,7 +251,7 @@ def edit_or_delete_transaction(user):
         for txn in all_transactions:
             writer.writerow(txn)
 
-def add_transaction(user, type_):
+def add_transaction(user, type_): # Function to add a transaction
     transaction_id = f'TXN{int(datetime.datetime.now().timestamp())}'
     amount_input = input('Enter amount: ')
     try:
@@ -334,7 +311,7 @@ def add_transaction(user, type_):
         print(f'Error writing to file: {e}')
         return False
 
-def display_transaction(txn):
+def display_transaction(txn): # Function to display a transaction
     """Display a transaction in a readable format"""
     print(f"\nID: {txn['transaction_id']}")
     print(f"Type: {txn['type'].capitalize()}")

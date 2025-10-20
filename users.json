@@ -1,14 +1,8 @@
 [
     {
-        "user_id": "d6dde031-1635-4784-8c5e-c7566b7cced6",
+        "user_id": "d6a12484-e326-454b-8c13-f76c3f9058b2",
         "name": "nady",
-        "password": "$2b$12$VLemIR0e4sks3UymAUM.m.Twqv/jYEAdh04Gd98YfWxceT3JgbTdO",
-        "currency": "USD"
-    },
-    {
-        "user_id": "867d88f3-f36c-47be-9d44-469cba6c39f5",
-        "name": "emy",
-        "password": "$2b$12$NzbVoYkhKYK6l7zxfeqTP.AbNfyNl5gfj7ZGiY9Dg8NnXexlsFlAq",
+        "password": "$2b$12$kDNAU/2jqyS/DUOGlcoACOFZu4AxzPZsz3viI.ynvD9VZRqhNcPQm",
         "currency": "USD"
     }
 ]
