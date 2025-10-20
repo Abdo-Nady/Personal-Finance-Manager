@@ -40,11 +40,15 @@ def menu():
     choice = input('Please select an option: ')
     return choice
 
-def load_users():
-    if not os.path.exists(USERS_FILE):
+def load_users(): #a function to load users from the JSON file
+    if not os.path.exists(USERS_FILE): 
         return []
-    with open(USERS_FILE, 'r') as f: #
-        return json.load(f)
+    try:
+        with open(USERS_FILE, 'r') as f: 
+            return json.load(f)
+    except json.JSONDecodeError:    
+        return []
+    
 def save_users(users):
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=4)
@@ -128,7 +132,9 @@ def HomePage(user):
 
 def Transactions(user):
     while True:
+        print('\n' + '='*50) 
         print('Transactions Page')
+        print('='*50)
         print('1. Add Expense') 
         print('2. Add Income')
         print('3. view All Transactions')
@@ -137,13 +143,16 @@ def Transactions(user):
         print('6. Back to Home Page')
         choice = input('Please select an option: ')
         if choice == '1':
-            add_transaction(user, 'expense')
-            print('Expense added successfully!')
+            if add_transaction(user, 'expense'):
+                print('Expense added successfully!')
+            else:
+                print('Failed to add expense.')
 
         elif choice == '2':
-            add_transaction(user, 'income')
-            print('Income added successfully!')
-  
+            if add_transaction(user, 'income'):
+                print('Income added successfully!')
+            else:
+                print('Failed to add income.')
         elif choice == '3':
             print('\n--- All Transactions ---')
             if not os.path.exists('transaction.csv'):
@@ -153,8 +162,9 @@ def Transactions(user):
                     reader = csv.DictReader(csvfile)
                     found = False
                     for row in reader:
-                        if row['user_id'] == user:
-                            print(row)
+                        cleaned_row = {key.strip(): value for key, value in row.items()}  # ✅
+                        if cleaned_row['user_id'] == user:
+                            display_transaction(cleaned_row)
                             found = True
                     if not found:
                         print('You have no transactions!')
@@ -191,7 +201,7 @@ def edit_or_delete_transaction(user):
             all_transactions.append(cleaned_row)
             if cleaned_row['user_id'] == user:
                 user_transactions.append(cleaned_row)
-                print(cleaned_row)
+                display_transaction(cleaned_row)
     
     if not user_transactions:
         print('You have no transactions!')
@@ -215,11 +225,11 @@ def edit_or_delete_transaction(user):
                     try:
                         validated_amount = Decimal(new_amount)
                         if validated_amount <= 0:
-                            print(' Amount must be greater than 0! Keeping current value.')
+                            print('Amount must be greater than 0! Keeping current value.')
                         else:
                             txn['amount'] = str(validated_amount)
                     except:
-                        print(' Invalid amount! Keeping current value.')
+                        print('Invalid amount! Keeping current value.')
                 
                 txn['category'] = input(f'Category (current: {txn["category"]}): ') or txn['category']
                 
@@ -230,21 +240,21 @@ def edit_or_delete_transaction(user):
                         datetime.datetime.strptime(new_date, '%Y-%m-%d')
                         txn['date'] = new_date
                     except ValueError:
-                        print(' Invalid date format! Keeping current value.')
+                        print('Invalid date format! Keeping current value.')
                 
                 txn['description'] = input(f'Description (current: {txn["description"]}): ') or txn['description']
                 txn['payment_method'] = input(f'Payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
-                print(' Transaction updated successfully!')
+                print('Transaction updated successfully!')
             elif action == 'd':
                 all_transactions.remove(txn)
-                print(' Transaction deleted successfully!')
+                print('Transaction deleted successfully!')
             else:
-                print(' Invalid action!')
+                print('Invalid action!')
                 return
             break
     
     if not transaction_found:
-        print(' Transaction not found or does not belong to you!')
+        print('Transaction not found or does not belong to you!')
         return
     
     # Write back ALL transactions
@@ -261,51 +271,70 @@ def add_transaction(user, type_):
     try:
         amount = Decimal(amount_input)
         if amount <= 0:
-            print(' Amount must be greater than 0!')
-            return
+            print('Amount must be greater than 0!')
+            return False
     except:
-        print(' Invalid amount. Please enter a numeric value.')
-        return
+        print('Invalid amount. Please enter a numeric value.')
+        return False
     
     category = input('Enter category: ')
     if not category.strip():
-        print(' Category cannot be empty!')
-        return
+        print('Category cannot be empty!')
+        return False
     
     date = input('Enter date (YYYY-MM-DD): ')
     try:
         datetime.datetime.strptime(date, '%Y-%m-%d')
     except ValueError:
-        print(' Invalid date format. Please use YYYY-MM-DD.')
-        return
+        print('Invalid date format. Please use YYYY-MM-DD.')
+        return False
     
     description = input('Enter description: ')
+    
     payment_method = input('Enter payment method: ')
+    if not payment_method.strip():
+        print('Payment method cannot be empty!')
+        return False
     
     # Check if file exists BEFORE opening
     file_exists = os.path.exists('transaction.csv')
     
     # Open file ONCE
-    with open('transaction.csv', 'a', newline='') as csvfile:
-        fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        
-        # Write header if needed
-        if not file_exists or os.stat('transaction.csv').st_size == 0:
-            writer.writeheader()
-        
-        # Write transaction
-        writer.writerow({
-            'transaction_id': transaction_id,
-            'user_id': user,
-            'type': type_,
-            'amount': str(amount),  # ✅ Convert Decimal to string
-            'category': category,
-            'date': date,
-            'description': description,
-            'payment_method': payment_method
-        })
+    try:
+        with open('transaction.csv', 'a', newline='') as csvfile:
+            fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            
+            # Write header if needed
+            if not file_exists or os.stat('transaction.csv').st_size == 0:
+                writer.writeheader()
+            
+            # Write transaction
+            writer.writerow({
+                'transaction_id': transaction_id,
+                'user_id': user,
+                'type': type_,
+                'amount': str(amount),  # ✅ Convert Decimal to string
+                'category': category,
+                'date': date,
+                'description': description,
+                'payment_method': payment_method
+            })
+        return True
+    except Exception as e:
+        print(f'Error writing to file: {e}')
+        return False
 
+def display_transaction(txn):
+    """Display a transaction in a readable format"""
+    print(f"\nID: {txn['transaction_id']}")
+    print(f"Type: {txn['type'].capitalize()}")
+    print(f"Amount: ${txn['amount']}")
+    print(f"Category: {txn['category']}")
+    print(f"Date: {txn['date']}")
+    print(f"Description: {txn['description']}")
+    print(f"Payment: {txn['payment_method']}")
+    print('-' * 40)
 
 def Reports(user):     
     print('Reports Page')
