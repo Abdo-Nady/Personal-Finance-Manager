@@ -3,6 +3,7 @@ import csv
 import json
 import os
 import uuid
+import bcrypt
 from decimal import Decimal
 
 
@@ -30,6 +31,7 @@ USERS_FILE = "users.json"
                             
 # }
 
+
 def menu():
     print('Welcome to the Expense Tracker!')
     print('1. Login')
@@ -47,6 +49,15 @@ def save_users(users):
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=4)
 
+def hash_password(password):
+    """Hash a password using bcrypt"""
+    # Convert password to bytes and hash it
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+def verify_password(password, hashed_password):
+    """Verify a password against its hash"""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def register():
     users = load_users()
@@ -55,12 +66,13 @@ def register():
         print('Username already exists!')
         return None
     password = input('Enter a password: ')
+    
     user_id = str(uuid.uuid4())  
 
     user = {
         "user_id": user_id,
         "name": username,
-        "password": password,
+        "password": hash_password(password),
         "currency": "USD"
     }
     users.append(user)
@@ -77,7 +89,7 @@ def login():
     username = input('Enter your username: ')
     password = input('Enter your password: ')
     for u in users:
-       if u["name"] == username and u["password"] == password:
+       if u["name"] == username and verify_password(password, u["password"]):
            print('Login successful!')
            return username
        else:
@@ -271,6 +283,5 @@ if __name__ == '__main__': # Main program loop
             break
         else:
             print('Invalid choice. Please try again.')
-
 
 

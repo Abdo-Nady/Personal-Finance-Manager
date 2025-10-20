@@ -1,20 +1,8 @@
 [
     {
-        "user_id": "NADY",
-        "name": "NADY",
-        "password": "1234",
-        "currency": "USD"
-    },
-    {
-        "user_id": "ahmed",
-        "name": "ahmed",
-        "password": "299",
-        "currency": "USD"
-    },
-    {
-        "user_id": "9cdcb95d-aaa5-4b9d-ae2a-c6299f6aabea",
-        "name": "joe",
-        "password": "9000",
+        "user_id": "d6dde031-1635-4784-8c5e-c7566b7cced6",
+        "name": "nady",
+        "password": "$2b$12$VLemIR0e4sks3UymAUM.m.Twqv/jYEAdh04Gd98YfWxceT3JgbTdO",
         "currency": "USD"
     }
 ]
