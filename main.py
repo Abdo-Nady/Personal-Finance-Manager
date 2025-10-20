@@ -142,17 +142,37 @@ def Transactions(user):
         # Placeholder for search/filter functionality
         Transactions(user)
     elif choice == '5':
-        print(' All Transactions:')
-        transactions = []
+        print('All Transactions:')
+        
+        # Load ALL transactions from the file
+        all_transactions = []
+        user_transactions = []
+        
+        # Check if file exists first
+        if not os.path.exists('transaction.csv'):
+            print('No transactions found!')
+            Transactions(user)
+            return
+        
         with open('transaction.csv', 'r') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                all_transactions.append(row)  # Save ALL transactions
                 if row['user_id'] == user:
-                    transactions.append(row)
+                    user_transactions.append(row)  # Separate user's transactions
                     print(row)
+        
+        if not user_transactions:
+            print('You have no transactions!')
+            Transactions(user)
+            return
+        
         txn_id = input('Enter the Transaction ID to edit or delete: ')
-        for txn in transactions:
-            if txn['transaction_id'] == txn_id:
+        
+        transaction_found = False
+        for txn in all_transactions:  # Loop through ALL transactions
+            if txn['transaction_id'] == txn_id and txn['user_id'] == user:
+                transaction_found = True
                 action = input('Enter "e" to edit or "d" to delete: ')
                 if action == 'e':
                     txn['amount'] = input(f'Enter new amount (current: {txn["amount"]}): ') or txn['amount']
@@ -162,15 +182,23 @@ def Transactions(user):
                     txn['payment_method'] = input(f'Enter new payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
                     print('Transaction updated successfully!')
                 elif action == 'd':
-                    transactions.remove(txn)
+                    all_transactions.remove(txn)  # Remove from ALL transactions
                     print('Transaction deleted successfully!')
+                else:
+                    print('Invalid action!')
                 break
+        
+        if not transaction_found:
+            print('Transaction not found or does not belong to you!')
+        
+        # Write back ALL transactions
         with open('transaction.csv', 'w', newline='') as csvfile:
             fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            for txn in transactions:
+            for txn in all_transactions:  # Write ALL transactions back
                 writer.writerow(txn)
+        
         Transactions(user)
     elif choice == '6':
         HomePage(user)  
@@ -181,10 +209,30 @@ def Transactions(user):
 def add_transaction(user, type_):
     transaction_id = f'TXN{int(datetime.datetime.now().timestamp())}'
     amount = input('Enter amount: ')
+    try:
+        amount = str(Decimal(amount))
+    except:
+        print('Invalid amount. Please enter a numeric value.')
+        return
     category = input('Enter category: ')
     date = input('Enter date (YYYY-MM-DD): ')
+    try:
+        datetime.datetime.strptime(date, '%Y-%m-%d')
+    except ValueError:
+        print('Invalid date format. Please use YYYY-MM-DD.')
+        return
     description = input('Enter description: ')
     payment_method = input('Enter payment method: ')
+    
+    try:
+        with open('transaction.csv', 'r') as csvfile:
+            pass
+    except FileNotFoundError: # Create the file if it doesn't exist
+        with open('transaction.csv', 'w', newline='') as csvfile:
+            fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
     with open('transaction.csv', 'a', newline='') as csvfile:
         fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
