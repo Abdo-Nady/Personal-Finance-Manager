@@ -246,6 +246,15 @@ def edit_or_delete_transaction(user):
                 txn['payment_method'] = input(f'Payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
                 print('Transaction updated successfully!')
             elif action == 'd':
+                #authenticate before deletion
+                password = input('Enter your password to confirm deletion: ')
+                users = load_users()
+                for u in users:
+                    if u["name"] == user and verify_password(password, u["password"]):
+                        break
+                else:
+                    print('Authentication failed! Transaction not deleted.')
+                    return
                 all_transactions.remove(txn)
                 print('Transaction deleted successfully!')
             else:
