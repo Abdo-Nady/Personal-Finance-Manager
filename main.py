@@ -92,9 +92,8 @@ def login():
        if u["name"] == username and verify_password(password, u["password"]):
            print('Login successful!')
            return username
-       else:
-            print('Invalid username or password!')
-            return None
+    print('Invalid username or password!')
+    return None
     
 
     
@@ -129,7 +128,6 @@ def HomePage(user):
 
 def Transactions(user):
     while True:
-        users = load_users()
         print('Transactions Page')
         print('1. Add Expense') 
         print('2. Add Income')
@@ -189,16 +187,18 @@ def edit_or_delete_transaction(user):
     with open('transaction.csv', 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            all_transactions.append(row)
-            if row['user_id'] == user:
-                user_transactions.append(row)
-                print(row)
+            cleaned_row = {key.strip(): value for key, value in row.items()}
+            all_transactions.append(cleaned_row)
+            if cleaned_row['user_id'] == user:
+                user_transactions.append(cleaned_row)
+                print(cleaned_row)
     
     if not user_transactions:
         print('You have no transactions!')
         return
     
     txn_id = input('\nEnter the Transaction ID to edit or delete: ')
+
     
     transaction_found = False
     for txn in all_transactions:
@@ -208,22 +208,43 @@ def edit_or_delete_transaction(user):
             
             if action == 'e':
                 print('\n--- Edit Transaction (press Enter to keep current value) ---')
-                txn['amount'] = input(f'Amount (current: {txn["amount"]}): ') or txn['amount']
+                
+                # Validate amount if user enters new value
+                new_amount = input(f'Amount (current: {txn["amount"]}): ')
+                if new_amount:
+                    try:
+                        validated_amount = Decimal(new_amount)
+                        if validated_amount <= 0:
+                            print(' Amount must be greater than 0! Keeping current value.')
+                        else:
+                            txn['amount'] = str(validated_amount)
+                    except:
+                        print(' Invalid amount! Keeping current value.')
+                
                 txn['category'] = input(f'Category (current: {txn["category"]}): ') or txn['category']
-                txn['date'] = input(f'Date (current: {txn["date"]}): ') or txn['date']
+                
+                # Validate date if user enters new value
+                new_date = input(f'Date (current: {txn["date"]}): ')
+                if new_date:
+                    try:
+                        datetime.datetime.strptime(new_date, '%Y-%m-%d')
+                        txn['date'] = new_date
+                    except ValueError:
+                        print(' Invalid date format! Keeping current value.')
+                
                 txn['description'] = input(f'Description (current: {txn["description"]}): ') or txn['description']
                 txn['payment_method'] = input(f'Payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
-                print('✅ Transaction updated successfully!')
+                print(' Transaction updated successfully!')
             elif action == 'd':
                 all_transactions.remove(txn)
-                print('✅ Transaction deleted successfully!')
+                print(' Transaction deleted successfully!')
             else:
-                print('❌ Invalid action!')
+                print(' Invalid action!')
                 return
             break
     
     if not transaction_found:
-        print('❌ Transaction not found or does not belong to you!')
+        print(' Transaction not found or does not belong to you!')
         return
     
     # Write back ALL transactions
@@ -236,41 +257,49 @@ def edit_or_delete_transaction(user):
 
 def add_transaction(user, type_):
     transaction_id = f'TXN{int(datetime.datetime.now().timestamp())}'
-    amount = input('Enter amount: ')
+    amount_input = input('Enter amount: ')
     try:
-        amount = str(Decimal(amount))
+        amount = Decimal(amount_input)
+        if amount <= 0:
+            print(' Amount must be greater than 0!')
+            return
     except:
-        print('Invalid amount. Please enter a numeric value.')
+        print(' Invalid amount. Please enter a numeric value.')
         return
+    
     category = input('Enter category: ')
+    if not category.strip():
+        print(' Category cannot be empty!')
+        return
+    
     date = input('Enter date (YYYY-MM-DD): ')
     try:
         datetime.datetime.strptime(date, '%Y-%m-%d')
     except ValueError:
-        print('Invalid date format. Please use YYYY-MM-DD.')
+        print(' Invalid date format. Please use YYYY-MM-DD.')
         return
+    
     description = input('Enter description: ')
     payment_method = input('Enter payment method: ')
     
-    try:
-        with open('transaction.csv', 'r') as csvfile:
-            pass
-    except FileNotFoundError: # Create the file if it doesn't exist
-        with open('transaction.csv', 'w', newline='') as csvfile:
-            fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-
+    # Check if file exists BEFORE opening
+    file_exists = os.path.exists('transaction.csv')
+    
+    # Open file ONCE
     with open('transaction.csv', 'a', newline='') as csvfile:
         fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        if os.stat('transaction.csv').st_size == 0:
+        
+        # Write header if needed
+        if not file_exists or os.stat('transaction.csv').st_size == 0:
             writer.writeheader()
+        
+        # Write transaction
         writer.writerow({
             'transaction_id': transaction_id,
             'user_id': user,
             'type': type_,
-            'amount': amount,
+            'amount': str(amount),  # ✅ Convert Decimal to string
             'category': category,
             'date': date,
             'description': description,

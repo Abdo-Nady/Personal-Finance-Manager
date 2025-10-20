@@ -4,5 +4,11 @@
         "name": "nady",
         "password": "$2b$12$VLemIR0e4sks3UymAUM.m.Twqv/jYEAdh04Gd98YfWxceT3JgbTdO",
         "currency": "USD"
+    },
+    {
+        "user_id": "867d88f3-f36c-47be-9d44-469cba6c39f5",
+        "name": "emy",
+        "password": "$2b$12$NzbVoYkhKYK6l7zxfeqTP.AbNfyNl5gfj7ZGiY9Dg8NnXexlsFlAq",
+        "currency": "USD"
     }
 ]

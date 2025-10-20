@@ -1,2 +1,2 @@
-transaction_id,user_id,type,amount,category ,date,description,payment_method
-TXN1760991589,NADY,income,5000,fun,2025-1-1,fun,paypal
+transaction_id,user_id,type,amount,category,date,description,payment_method
+TXN1761000497,nady,income,900,Salary,2025-10-20,My Salary,debit
