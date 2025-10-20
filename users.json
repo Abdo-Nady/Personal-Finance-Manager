@@ -1,1 +1,20 @@
-{"nady": {"password": "1984", "expenses": [{"amount": "5000", "category": "food", "date": "1900-1-2"}]}}
+[
+    {
+        "user_id": "NADY",
+        "name": "NADY",
+        "password": "1234",
+        "currency": "USD"
+    },
+    {
+        "user_id": "ahmed",
+        "name": "ahmed",
+        "password": "299",
+        "currency": "USD"
+    },
+    {
+        "user_id": "9cdcb95d-aaa5-4b9d-ae2a-c6299f6aabea",
+        "name": "joe",
+        "password": "9000",
+        "currency": "USD"
+    }
+]
