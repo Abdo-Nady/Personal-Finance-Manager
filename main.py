@@ -2,12 +2,14 @@ import datetime
 import csv 
 import json
 import os
+import getpass
 import uuid
 import bcrypt
 from decimal import Decimal
 
 
 USERS_FILE = "users.json"
+TRANSACTIONS_FILE = "transaction.csv"
 
 def menu(): # Main menu function
     print('Welcome to the Expense Tracker!')
@@ -27,8 +29,11 @@ def load_users(): #a function to load users from the JSON file
         return []
     
 def save_users(users): #a function to save users to the JSON file
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users, f, indent=4)
+   try:
+        with open(USERS_FILE, 'w') as f:
+            json.dump(users, f, indent=4)
+   except Exception as e:
+        print(f"Error saving users: {e}")
 
 def hash_password(password): #function to hash passwords
     """Hash a password using bcrypt"""
@@ -46,7 +51,10 @@ def register(): # Function to handle user registration
     if any(u["name"] == username for u in users):
         print('Username already exists!')
         return None
-    password = input('Enter a password: ')
+    password = getpass.getpass('Enter a password:  ')
+    currency = input('Enter your preferred currency (default is USD): ')
+    if not currency.strip():
+        currency = "USD"
     
     user_id = str(uuid.uuid4())  
 
@@ -54,7 +62,7 @@ def register(): # Function to handle user registration
         "user_id": user_id,
         "name": username,
         "password": hash_password(password),
-        "currency": "USD"
+        "currency": currency
     }
     users.append(user)
 
@@ -68,7 +76,7 @@ def register(): # Function to handle user registration
 def login(): # Function to handle user login
     users = load_users()
     username = input('Enter your username: ')
-    password = input('Enter your password: ')
+    password = getpass.getpass('Enter your password:  ')
     for u in users:
        if u["name"] == username and verify_password(password, u["password"]):
            print('Login successful!')
@@ -132,15 +140,15 @@ def Transactions(user): # Function to handle transactions
                 print('Failed to add income.')
         elif choice == '3':
             print('\n--- All Transactions ---')
-            if not os.path.exists('transaction.csv'):
+            if not os.path.exists(TRANSACTIONS_FILE):
                 print('No transactions found!')
             else:
-                with open('transaction.csv', 'r') as csvfile:
+                with open(TRANSACTIONS_FILE, 'r') as csvfile:
                     reader = csv.DictReader(csvfile)
                     found = False
                     for row in reader:
                         cleaned_row = {key.strip(): value for key, value in row.items()}  # ✅
-                        if cleaned_row['user_id'] == user:
+                        if cleaned_row['user'] == user:
                             display_transaction(cleaned_row)
                             found = True
                     if not found:
@@ -167,16 +175,16 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
     all_transactions = []
     user_transactions = []
     
-    if not os.path.exists('transaction.csv'):
+    if not os.path.exists(TRANSACTIONS_FILE):
         print('No transactions found!')
         return
     
-    with open('transaction.csv', 'r') as csvfile:
+    with open(TRANSACTIONS_FILE, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             cleaned_row = {key.strip(): value for key, value in row.items()}
             all_transactions.append(cleaned_row)
-            if cleaned_row['user_id'] == user:
+            if cleaned_row['user'] == user:
                 user_transactions.append(cleaned_row)
                 display_transaction(cleaned_row)
     
@@ -189,7 +197,7 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
     
     transaction_found = False
     for txn in all_transactions:
-        if txn['transaction_id'] == txn_id and txn['user_id'] == user:
+        if txn['transaction_id'] == txn_id and txn['user'] == user:
             transaction_found = True
             action = input('Enter "e" to edit or "d" to delete: ').lower()
             
@@ -224,7 +232,7 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
                 print('Transaction updated successfully!')
             elif action == 'd':
                 #authenticate before deletion
-                password = input('Enter your password to confirm deletion: ')
+                password = getpass.getpass('Enter your password to confirm deletion:  ')
                 users = load_users()
                 for u in users:
                     if u["name"] == user and verify_password(password, u["password"]):
@@ -244,8 +252,8 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
         return
     
     # Write back ALL transactions
-    with open('transaction.csv', 'w', newline='') as csvfile:
-        fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+    with open(TRANSACTIONS_FILE, 'w', newline='') as csvfile:
+        fieldnames = ['transaction_id', 'user', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for txn in all_transactions:
@@ -283,22 +291,22 @@ def add_transaction(user, type_): # Function to add a transaction
         return False
     
     # Check if file exists BEFORE opening
-    file_exists = os.path.exists('transaction.csv')
+    file_exists = os.path.exists(TRANSACTIONS_FILE)
     
     # Open file ONCE
     try:
-        with open('transaction.csv', 'a', newline='') as csvfile:
-            fieldnames = ['transaction_id', 'user_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+        with open(TRANSACTIONS_FILE, 'a', newline='') as csvfile:
+            fieldnames = ['transaction_id', 'user', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
             # Write header if needed
-            if not file_exists or os.stat('transaction.csv').st_size == 0:
+            if not file_exists or os.stat(TRANSACTIONS_FILE).st_size == 0:
                 writer.writeheader()
             
             # Write transaction
             writer.writerow({
                 'transaction_id': transaction_id,
-                'user_id': user,
+                'user': user,
                 'type': type_,
                 'amount': str(amount),  # ✅ Convert Decimal to string
                 'category': category,
@@ -315,7 +323,7 @@ def display_transaction(txn): # Function to display a transaction
     """Display a transaction in a readable format"""
     print(f"\nID: {txn['transaction_id']}")
     print(f"Type: {txn['type'].capitalize()}")
-    print(f"Amount: ${txn['amount']}")
+    print(f"Amount: {txn['amount']}")
     print(f"Category: {txn['category']}")
     print(f"Date: {txn['date']}")
     print(f"Description: {txn['description']}")
