@@ -1,0 +1,3 @@
+transaction_id,user,type,amount,category,date,description,payment_method
+TXN1761006641,nady,expense,123,family,2025-10-2,family,debit
+TXN1761007105,jack,income,900,food,2025-10-21,food,debit

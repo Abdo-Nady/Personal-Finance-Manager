@@ -1,0 +1,14 @@
+[
+    {
+        "user_id": "d6a12484-e326-454b-8c13-f76c3f9058b2",
+        "name": "nady",
+        "password": "$2b$12$kDNAU/2jqyS/DUOGlcoACOFZu4AxzPZsz3viI.ynvD9VZRqhNcPQm",
+        "currency": "USD"
+    },
+    {
+        "user_id": "1225d99b-2ed6-45cb-bc23-444bf1e12b72",
+        "name": "jack",
+        "password": "$2b$12$VH9vPCFo/KmgDXxiaoFo9.8H23n7S9qQiZ3WvKlwzB3Qm59otjTf2",
+        "currency": "EGP"
+    }
+]
