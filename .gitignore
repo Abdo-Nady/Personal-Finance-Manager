@@ -1,0 +1,10 @@
+tests/
+__pycache__/
+*.pyc
+.env
+.vscode/
+.idea/
+.pytest_cache/
+backups/
+last_backup.txt
+

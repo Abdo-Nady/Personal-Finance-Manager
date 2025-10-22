@@ -6,11 +6,62 @@ import getpass
 import uuid
 import bcrypt
 from decimal import Decimal
-
+import shutil # backup files
 
 USERS_FILE = "users.json"
 TRANSACTIONS_FILE = "transaction.csv"
+BACKUP_DIR = "backups"
+LAST_BACKUP_FILE = "last_backup.txt"
 
+
+
+def should_backup():
+    """Check if we need to backup this month"""
+    if not os.path.exists(LAST_BACKUP_FILE):
+        return True
+    
+    try:
+        with open(LAST_BACKUP_FILE, 'r') as f:
+            last_backup = f.read().strip()
+            current_month = datetime.datetime.now().strftime('%Y-%m')
+            return last_backup != current_month
+    except:
+        return True
+
+
+def monthly_backup():
+    """Create backup once per month"""
+    if not should_backup():
+        return
+    
+    timestamp = datetime.datetime.now().strftime('%Y-%m')  # YYYY-MM format
+    
+    if not os.path.exists(BACKUP_DIR):
+        os.makedirs(BACKUP_DIR)
+    
+    try:
+        backup_count = 0
+        if os.path.exists(USERS_FILE):
+            shutil.copy2(USERS_FILE, f"{BACKUP_DIR}/users_{timestamp}.json")
+            backup_count += 1
+        
+        if os.path.exists(TRANSACTIONS_FILE):
+            shutil.copy2(TRANSACTIONS_FILE, f"{BACKUP_DIR}/transaction_{timestamp}.csv")
+            backup_count += 1
+        
+        if backup_count > 0:
+            # Update last backup date
+            with open(LAST_BACKUP_FILE, 'w') as f:
+                f.write(datetime.datetime.now().strftime('%Y-%m'))
+            
+            print(f"\n{'='*50}")
+            print(f"✅ Monthly backup created successfully! ({timestamp})")
+            print(f"{'='*50}\n")
+    except Exception as e:
+        print(f"⚠️ Backup failed: {e}")
+        
+        
+        
 def menu():
     print('Welcome to the Expense Tracker!')
     print('1. Login')
@@ -321,14 +372,13 @@ def Transactions(user, profile):
 
 def edit_or_delete_transaction(user, profile):
     print('\n--- All Your Transactions ---')
-    
-    all_transactions = []
-    profile_transactions = []
-    
     if not os.path.exists(TRANSACTIONS_FILE):
         print('No transactions found!')
         return
     
+    all_transactions = []
+    profile_transactions = []
+        
     with open(TRANSACTIONS_FILE, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -342,59 +392,66 @@ def edit_or_delete_transaction(user, profile):
         print('You have no transactions in this profile!')
         return
     
-    txn_id = input('\nEnter the Transaction ID to edit or delete: ')
+    txn_id = input('\nEnter the Transaction ID to edit or delete: ').strip()
+    if not txn_id:
+        print('Transaction ID cannot be empty!')
+        return
     
-    transaction_found = False
+    target_txn = None
     for txn in all_transactions:
         if txn['transaction_id'] == txn_id and txn.get('profile_id') == profile['profile_id']:
-            transaction_found = True
-            action = input('Enter "e" to edit or "d" to delete: ').lower()
-            
-            if action == 'e':
-                print('\n--- Edit Transaction (press Enter to keep current value) ---')
-                
-                new_amount = input(f'Amount (current: {txn["amount"]}): ')
-                if new_amount:
-                    try:
-                        validated_amount = Decimal(new_amount)
-                        if validated_amount <= 0:
-                            print('Amount must be greater than 0! Keeping current value.')
-                        else:
-                            txn['amount'] = str(validated_amount)
-                    except:
-                        print('Invalid amount! Keeping current value.')
-                
-                txn['category'] = input(f'Category (current: {txn["category"]}): ') or txn['category']
-                
-                new_date = input(f'Date (current: {txn["date"]}): ')
-                if new_date:
-                    try:
-                        datetime.datetime.strptime(new_date, '%Y-%m-%d')
-                        txn['date'] = new_date
-                    except ValueError:
-                        print('Invalid date format! Keeping current value.')
-                
-                txn['description'] = input(f'Description (current: {txn["description"]}): ') or txn['description']
-                txn['payment_method'] = input(f'Payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
-                print('Transaction updated successfully!')
-            elif action == 'd':
-                password = getpass.getpass('Enter your password to confirm deletion:  ')
-                users = load_users()
-                for u in users:
-                    if u["name"] == user and verify_password(password, u["password"]):
-                        break
-                else:
-                    print('Authentication failed! Transaction not deleted.')
-                    return
-                all_transactions.remove(txn)
-                print('Transaction deleted successfully!')
-            else:
-                print('Invalid action!')
-                return
+            target_txn = txn
             break
     
-    if not transaction_found:
-        print('Transaction not found or does not belong to this profile!')
+ 
+    if not target_txn:
+        print('Transaction not found in this profile!')
+        return
+    
+    action = input('Enter "e" to edit or "d" to delete: ').lower()
+    
+    if action == 'e':
+        print('\n--- Edit Transaction (press Enter to keep current value) ---')
+        
+        new_amount = input(f'Amount (current: {target_txn["amount"]}): ')
+        if new_amount:
+            try:
+                validated_amount = Decimal(new_amount)
+                if validated_amount <= 0:
+                    print('Amount must be greater than 0! Keeping current value.')
+                else:
+                    target_txn['amount'] = str(validated_amount)
+            except:
+                print('Invalid amount! Keeping current value.')
+        
+        target_txn['category'] = input(f'Category (current: {target_txn["category"]}): ') or target_txn['category']
+        
+        new_date = input(f'Date (current: {target_txn["date"]}): ')
+        if new_date:
+            try:
+                datetime.datetime.strptime(new_date, '%Y-%m-%d')
+                target_txn['date'] = new_date
+            except ValueError:
+                print('Invalid date format! Keeping current value.')
+        
+        target_txn['description'] = input(f'Description (current: {target_txn["description"]}): ') or target_txn['description']
+        target_txn['payment_method'] = input(f'Payment method (current: {target_txn["payment_method"]}): ') or target_txn['payment_method']
+        print('Transaction updated successfully!')
+        
+    elif action == 'd':
+        password = getpass.getpass('Enter your password to confirm deletion:  ')
+        users = load_users()
+        for u in users:
+            if u["name"] == user and verify_password(password, u["password"]):
+                break
+        else:
+            print('Authentication failed! Transaction not deleted.')
+            return
+        all_transactions.remove(target_txn)
+        print('Transaction deleted successfully!')
+        
+    else:
+        print('Invalid action!')
         return
     
     with open(TRANSACTIONS_FILE, 'w', newline='') as csvfile:
@@ -477,6 +534,7 @@ def Reports(user, profile):
     # Placeholder for reports functionality
 
 if __name__ == '__main__':
+    monthly_backup()  
     while True:
         choice = menu()
         if choice == '1':
