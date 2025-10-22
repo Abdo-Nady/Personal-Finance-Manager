@@ -11,7 +11,7 @@ from decimal import Decimal
 USERS_FILE = "users.json"
 TRANSACTIONS_FILE = "transaction.csv"
 
-def menu(): # Main menu function
+def menu():
     print('Welcome to the Expense Tracker!')
     print('1. Login')
     print('2. Register')
@@ -19,61 +19,75 @@ def menu(): # Main menu function
     choice = input('Please select an option: ')
     return choice
 
-def load_users(): #a function to load users from the JSON file
-    if not os.path.exists(USERS_FILE): 
+def load_users():
+    if not os.path.exists(USERS_FILE):        
         return []
     try:
-        with open(USERS_FILE, 'r') as f: 
-            return json.load(f)
-    except json.JSONDecodeError:    
+        with open(USERS_FILE, 'r', encoding='utf-8') as f: 
+            return json.load(f) 
+    except json.JSONDecodeError:        
         return []
     
-def save_users(users): #a function to save users to the JSON file
-   try:
-        with open(USERS_FILE, 'w') as f:
+def save_users(users):
+    try:
+        with open(USERS_FILE, 'w', encoding='utf-8') as f:
             json.dump(users, f, indent=4)
-   except Exception as e:
+    except Exception as e:
         print(f"Error saving users: {e}")
 
-def hash_password(password): #function to hash passwords
+def hash_password(password):
     """Hash a password using bcrypt"""
-    # Convert password to bytes and hash it
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8') # Convert back to string for storage
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
-def verify_password(password, hashed_password): #function to verify passwords
+def verify_password(password, hashed_password):
     """Verify a password against its hash"""
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')) # Convert back to bytes for verification
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
-def register(): # Function to handle user registration
+def register():
     users = load_users()
     username = input('Enter a username: ')
     if any(u["name"] == username for u in users):
         print('Username already exists!')
         return None
     password = getpass.getpass('Enter a password:  ')
-    currency = input('Enter your preferred currency (default is USD): ')
+    
+    user_id = str(uuid.uuid4())
+    
+    # Create default profile
+    profile_name = input('Enter profile name: ')
+    if not profile_name.strip():
+        print('Profile name cannot be empty!')
+        return
+    
+    currency = input('Enter currency (default is USD): ')
     if not currency.strip():
         currency = "USD"
+        
+    default_profile = create_profile_data(profile_name, currency)
     
-    user_id = str(uuid.uuid4())  
-
     user = {
         "user_id": user_id,
         "name": username,
         "password": hash_password(password),
-        "currency": currency
+        "profiles": [default_profile]
     }
     users.append(user)
 
     save_users(users)
     print('Registration successful!')
+    print(f'Created default profile "{profile_name}" with currency "{currency}".')
     return username
 
- 
+def create_profile_data(profile_name, currency):
+    """Helper function to create profile data structure"""
+    return {
+        "profile_id": str(uuid.uuid4()),
+        "profile_name": profile_name,
+        "currency": currency
+    }
 
-
-def login(): # Function to handle user login
+def login():
     users = load_users()
     username = input('Enter your username: ')
     password = getpass.getpass('Enter your password:  ')
@@ -83,58 +97,199 @@ def login(): # Function to handle user login
            return username
     print('Invalid username or password!')
     return None
-    
 
-    
+def get_user_data(username):
+    """Get user data by username"""
+    users = load_users()
+    for u in users:
+        if u["name"] == username:
+            return u
+    return None
 
+def profile_menu(user):
+    """Display profile selection/management menu"""
+    user_data = get_user_data(user)
+    if not user_data:  # defensive programming in case json is corrupted 
+        print("Error: User data not found! Please login again.")
+        return None
+     
+    while True:
+        print('\n' + '='*50)
+        print('Profile Management')
+        print('='*50)
+        print('Your Profiles:')
+        for idx, profile in enumerate(user_data["profiles"], 1):
+            print(f'{idx}. {profile["profile_name"]} (Currency: {profile["currency"]})')
+        print('='*50)
+        print(f'{len(user_data["profiles"]) + 1}. Create New Profile')
+        print(f'{len(user_data["profiles"]) + 2}. Delete Profile')
+        print(f'{len(user_data["profiles"]) + 3}. Logout')
+        print('='*50)
+        
+        choice = input('Select a profile number or option: ')
+        
+        try:
+            choice_num = int(choice)
+            if 1 <= choice_num <= len(user_data["profiles"]):
+                selected_profile = user_data["profiles"][choice_num - 1]
+                print(f'\nSwitched to profile: {selected_profile["profile_name"]}')
+                return selected_profile
+            elif choice_num == len(user_data["profiles"]) + 1:
+                create_new_profile(user)
+                user_data = get_user_data(user)  # Refresh user data
+            elif choice_num == len(user_data["profiles"]) + 2:
+                delete_profile(user)
+                user_data = get_user_data(user)  # Refresh user data
+            elif choice_num == len(user_data["profiles"]) + 3:
+                print('Logging out...')
+                return None
+            else:
+                print('Invalid choice. Please try again.')
+        except ValueError:
+            print('Invalid input. Please enter a number.')
+
+def create_new_profile(user):
+    """Create a new profile for the user"""
+    users = load_users()
     
+    profile_name = input('Enter profile name: ')
+    if not profile_name.strip():
+        print('Profile name cannot be empty!')
+        return
     
-def HomePage(user): # Function for the home page
+    # Check for duplicate profile name
+    user_data = get_user_data(user)
+    if user_data and any(p['profile_name'] == profile_name for p in user_data.get('profiles', [])):
+        print(f'Profile "{profile_name}" already exists!')
+        return
+    
+    currency = input('Enter currency (default is USD): ')
+    if not currency.strip():
+        currency = "USD"
+    
+    new_profile = create_profile_data(profile_name, currency)
+    
+    for u in users:
+        if u["name"] == user:
+            u["profiles"].append(new_profile)
+            save_users(users)
+            print(f'Profile "{profile_name}" created successfully!')
+            return
+    
+    print('Error: User not found!')
+
+def delete_profile(user):
+    """Delete a profile"""
+    user_data = get_user_data(user)
+    
+    if len(user_data["profiles"]) <= 1:
+        print('Cannot delete the last profile! You must have at least one profile.')
+        return
+    
+    print('\nSelect profile to delete:')
+    for idx, profile in enumerate(user_data["profiles"], 1):
+        print(f'{idx}. {profile["profile_name"]} (Currency: {profile["currency"]})')
+    
+    choice = input('Enter profile number to delete (or 0 to cancel): ')
+    
+    try:
+        choice_num = int(choice)
+        if choice_num == 0:
+            return
+        if 1 <= choice_num <= len(user_data["profiles"]):
+            # Confirm deletion
+            password = getpass.getpass('Enter your password to confirm deletion:  ')
+            users = load_users()
+            for u in users:
+                if u["name"] == user and verify_password(password, u["password"]):
+                    profile_to_delete = u["profiles"][choice_num - 1]
+                    profile_id = profile_to_delete["profile_id"]
+                    
+                    # Delete associated transactions
+                    delete_profile_transactions(profile_id)
+                    
+                    # Remove profile
+                    del u["profiles"][choice_num - 1]
+                    save_users(users)
+                    print(f'Profile "{profile_to_delete["profile_name"]}" deleted successfully!')
+                    return
+            print('Authentication failed! Profile not deleted.')
+        else:
+            print('Invalid choice.')
+    except ValueError:
+        print('Invalid input. Please enter a number.')
+
+def delete_profile_transactions(profile_id):
+    """Delete all transactions for a specific profile"""
+    if not os.path.exists(TRANSACTIONS_FILE): # defensive programming
+        return
+    
+    all_transactions = []
+    with open(TRANSACTIONS_FILE, 'r') as csvfile: # read all transactions
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            cleaned_row = {key.strip(): value for key, value in row.items()}
+            if cleaned_row.get('profile_id') != profile_id:
+                all_transactions.append(cleaned_row)
+    
+    with open(TRANSACTIONS_FILE, 'w', newline='') as csvfile: # rewrite file
+        fieldnames = ['transaction_id', 'user', 'profile_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for txn in all_transactions:
+            writer.writerow(txn) 
+
+def HomePage(user, profile):
     while True:
         print('\n' + '='*50)
         print('Welcome to your Expense Tracker Home Page!')
-        print(f'Hello, {user}!')
+        print(f'User: {user} | Profile: {profile["profile_name"]} | Currency: {profile["currency"]}')
         print('='*50)
         print('1. Transactions')
         print('2. Reports')
-        print('3. Switch User')
+        print('3. Switch Profile')
         print('4. Logout')
         print('='*50)
         choice = input('Please select an option: ')
         
         if choice == '1':
-            Transactions(user)
+            Transactions(user, profile)
         elif choice == '2':
-            Reports(user)
+            Reports(user, profile)
         elif choice == '3':
-            print('Switching user...')
-            break  # Exit loop to switch user
+            print('Switching profile...')
+            new_profile = profile_menu(user)  # ✅ Capture the returned profile
+            if new_profile:  # ✅ Check if a profile was selected
+                profile = new_profile  # ✅ Update the current profile
+            else:
+                # User chose to logout from profile menu
+                return 'logout'
         elif choice == '4':
             print('Logging out...')
-            break  # Exit loop to logout
+            return 'logout'
         else:
             print('Invalid choice. Please try again.')
 
-def Transactions(user): # Function to handle transactions
+def Transactions(user, profile):
     while True:
         print('\n' + '='*50) 
-        print('Transactions Page')
+        print(f'Transactions Page - Profile: {profile["profile_name"]}')
         print('='*50)
         print('1. Add Expense') 
         print('2. Add Income')
-        print('3. view All Transactions')
+        print('3. View All Transactions')
         print('4. Search / Filter Transactions')
         print('5. Edit or Delete Transaction')
         print('6. Back to Home Page')
         choice = input('Please select an option: ')
+        
         if choice == '1':
-            if add_transaction(user, 'expense'):
+            if add_transaction(user, profile, 'expense'):
                 print('Expense added successfully!')
             else:
                 print('Failed to add expense.')
-
         elif choice == '2':
-            if add_transaction(user, 'income'):
+            if add_transaction(user, profile, 'income'):
                 print('Income added successfully!')
             else:
                 print('Failed to add income.')
@@ -147,33 +302,28 @@ def Transactions(user): # Function to handle transactions
                     reader = csv.DictReader(csvfile)
                     found = False
                     for row in reader:
-                        cleaned_row = {key.strip(): value for key, value in row.items()}  # ✅
-                        if cleaned_row['user'] == user:
-                            display_transaction(cleaned_row)
+                        cleaned_row = {key.strip(): value for key, value in row.items()}
+                        if cleaned_row.get('profile_id') == profile['profile_id']:
+                            display_transaction(cleaned_row, profile)
                             found = True
                     if not found:
-                        print('You have no transactions!')
+                        print('You have no transactions in this profile!')
         elif choice == '4':
             print('Search / Filter Transactions Page')
             # Placeholder for search/filter functionality
         elif choice == '5':
-            edit_or_delete_transaction(user)
-
+            edit_or_delete_transaction(user, profile)
         elif choice == '6':
             print('Returning to Home Page...')
             break
-  
         else:
             print('Invalid choice. Please try again.')
-  
 
-
-def edit_or_delete_transaction(user): # Function to edit or delete a transaction
+def edit_or_delete_transaction(user, profile):
     print('\n--- All Your Transactions ---')
     
-    # Load ALL transactions
     all_transactions = []
-    user_transactions = []
+    profile_transactions = []
     
     if not os.path.exists(TRANSACTIONS_FILE):
         print('No transactions found!')
@@ -184,27 +334,25 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
         for row in reader:
             cleaned_row = {key.strip(): value for key, value in row.items()}
             all_transactions.append(cleaned_row)
-            if cleaned_row['user'] == user:
-                user_transactions.append(cleaned_row)
-                display_transaction(cleaned_row)
+            if cleaned_row.get('profile_id') == profile['profile_id']:
+                profile_transactions.append(cleaned_row)
+                display_transaction(cleaned_row, profile)
     
-    if not user_transactions:
-        print('You have no transactions!')
+    if not profile_transactions:
+        print('You have no transactions in this profile!')
         return
     
     txn_id = input('\nEnter the Transaction ID to edit or delete: ')
-
     
     transaction_found = False
     for txn in all_transactions:
-        if txn['transaction_id'] == txn_id and txn['user'] == user:
+        if txn['transaction_id'] == txn_id and txn.get('profile_id') == profile['profile_id']:
             transaction_found = True
             action = input('Enter "e" to edit or "d" to delete: ').lower()
             
             if action == 'e':
                 print('\n--- Edit Transaction (press Enter to keep current value) ---')
                 
-                # Validate amount if user enters new value
                 new_amount = input(f'Amount (current: {txn["amount"]}): ')
                 if new_amount:
                     try:
@@ -218,7 +366,6 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
                 
                 txn['category'] = input(f'Category (current: {txn["category"]}): ') or txn['category']
                 
-                # Validate date if user enters new value
                 new_date = input(f'Date (current: {txn["date"]}): ')
                 if new_date:
                     try:
@@ -231,7 +378,6 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
                 txn['payment_method'] = input(f'Payment method (current: {txn["payment_method"]}): ') or txn['payment_method']
                 print('Transaction updated successfully!')
             elif action == 'd':
-                #authenticate before deletion
                 password = getpass.getpass('Enter your password to confirm deletion:  ')
                 users = load_users()
                 for u in users:
@@ -248,18 +394,17 @@ def edit_or_delete_transaction(user): # Function to edit or delete a transaction
             break
     
     if not transaction_found:
-        print('Transaction not found or does not belong to you!')
+        print('Transaction not found or does not belong to this profile!')
         return
     
-    # Write back ALL transactions
     with open(TRANSACTIONS_FILE, 'w', newline='') as csvfile:
-        fieldnames = ['transaction_id', 'user', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+        fieldnames = ['transaction_id', 'user', 'profile_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for txn in all_transactions:
             writer.writerow(txn)
 
-def add_transaction(user, type_): # Function to add a transaction
+def add_transaction(user, profile, type_):
     transaction_id = f'TXN{int(datetime.datetime.now().timestamp())}'
     amount_input = input('Enter amount: ')
     try:
@@ -290,25 +435,22 @@ def add_transaction(user, type_): # Function to add a transaction
         print('Payment method cannot be empty!')
         return False
     
-    # Check if file exists BEFORE opening
     file_exists = os.path.exists(TRANSACTIONS_FILE)
     
-    # Open file ONCE
     try:
         with open(TRANSACTIONS_FILE, 'a', newline='') as csvfile:
-            fieldnames = ['transaction_id', 'user', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+            fieldnames = ['transaction_id', 'user', 'profile_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
-            # Write header if needed
             if not file_exists or os.stat(TRANSACTIONS_FILE).st_size == 0:
                 writer.writeheader()
             
-            # Write transaction
             writer.writerow({
                 'transaction_id': transaction_id,
                 'user': user,
+                'profile_id': profile['profile_id'],
                 'type': type_,
-                'amount': str(amount),  # ✅ Convert Decimal to string
+                'amount': str(amount),
                 'category': category,
                 'date': date,
                 'description': description,
@@ -319,37 +461,47 @@ def add_transaction(user, type_): # Function to add a transaction
         print(f'Error writing to file: {e}')
         return False
 
-def display_transaction(txn): # Function to display a transaction
+def display_transaction(txn, profile):
     """Display a transaction in a readable format"""
     print(f"\nID: {txn['transaction_id']}")
     print(f"Type: {txn['type'].capitalize()}")
-    print(f"Amount: {txn['amount']}")
+    print(f"Amount: {txn['amount']} {profile['currency']}")
     print(f"Category: {txn['category']}")
     print(f"Date: {txn['date']}")
     print(f"Description: {txn['description']}")
     print(f"Payment: {txn['payment_method']}")
     print('-' * 40)
 
-def Reports(user):     
-    print('Reports Page')
+def Reports(user, profile):     
+    print(f'Reports Page - Profile: {profile["profile_name"]}')
     # Placeholder for reports functionality
 
-
-if __name__ == '__main__': # Main program loop
+if __name__ == '__main__':
     while True:
         choice = menu()
         if choice == '1':
             user = login()
             if user:
-                HomePage(user)
+                while True:
+                    profile = profile_menu(user) # Get selected profile
+                    if profile is None: # User chose to logout
+                        break
+                    result = HomePage(user, profile) # Call HomePage and capture result
+                    if result == 'logout':
+                        break
+          
         elif choice == '2':
             user = register()
             if user:
-                HomePage(user)
+                while True:
+                    profile = profile_menu(user)
+                    if profile is None:
+                        break
+                    result = HomePage(user, profile)
+                    if result == 'logout':
+                        break
         elif choice == '3':
             print('Exiting the program. Goodbye!')
             break
         else:
             print('Invalid choice. Please try again.')
-
-

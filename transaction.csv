@@ -1,3 +1,2 @@
-transaction_id,user,type,amount,category,date,description,payment_method
-TXN1761006641,nady,expense,123,family,2025-10-2,family,debit
-TXN1761007105,jack,income,900,food,2025-10-21,food,debit
+transaction_id,user,profile_id,type,amount,category,date,description,payment_method
+TXN1761084796,nady,c1f91e9d-d444-4355-bc2a-497360e0c02d,expense,900,eat,2025-10-9,eat food,debit
