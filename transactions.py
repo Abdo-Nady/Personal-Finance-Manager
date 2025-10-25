@@ -168,3 +168,135 @@ def display_transaction(txn, profile):
     print('-' * 40)
 
 
+def search_filter_transactions(profile):
+    """Search and filter transactions for the given profile"""
+    if not os.path.exists(TRANSACTIONS_FILE):
+        print("No transactions file found.")
+        return
+
+    print_header("🔍 Search / Filter Transactions")
+    print("You can leave any field empty to skip that filter.\n")
+
+    keyword = input("Keyword (category or description): ").strip().lower()
+    date_from = input("From date (YYYY-MM-DD): ").strip()
+    date_to = input("To date (YYYY-MM-DD): ").strip()
+    min_amount = input("Minimum amount: ").strip()
+    max_amount = input("Maximum amount: ").strip()
+    txn_type = input("Type (income / expense): ").strip().lower()
+    sort_by = input("Sort by (date / amount): ").strip().lower()
+    sort_order = input("Order (asc / desc): ").strip().lower() or "asc"
+
+    results = []
+
+    with open(TRANSACTIONS_FILE, "r", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row = {k.strip(): v.strip() for k, v in row.items()}
+            if row.get("profile_id") != profile["profile_id"]:
+                continue
+
+            try:
+                txn_date = datetime.datetime.strptime(row["date"], "%Y-%m-%d")
+                txn_amount = Decimal(row["amount"])
+            except:
+                continue
+
+            if keyword and not (keyword in row["description"].lower() or keyword in row["category"].lower()):
+                continue
+            if date_from:
+                try:
+                    if txn_date < datetime.datetime.strptime(date_from, "%Y-%m-%d"):
+                        continue
+                except ValueError:
+                    print("⚠️ Invalid 'from' date format, skipping filter.")
+            if date_to:
+                try:
+                    if txn_date > datetime.datetime.strptime(date_to, "%Y-%m-%d"):
+                        continue
+                except ValueError:
+                    print("⚠️ Invalid 'to' date format, skipping filter.")
+            if min_amount:
+                try:
+                    if txn_amount < Decimal(min_amount):
+                        continue
+                except:
+                    print("⚠️ Invalid minimum amount format.")
+            if max_amount:
+                try:
+                    if txn_amount > Decimal(max_amount):
+                        continue
+                except:
+                    print("⚠️ Invalid maximum amount format.")
+            if txn_type and row["type"].lower() != txn_type:
+                continue
+
+            results.append(row)
+
+    if sort_by in ["date", "amount"]:
+        reverse = sort_order == "desc"
+        if sort_by == "date":
+            results.sort(key=lambda x: x["date"], reverse=reverse)
+        elif sort_by == "amount":
+            results.sort(key=lambda x: Decimal(x["amount"]), reverse=reverse)
+
+    if not results:
+        print("\nNo transactions match your filters.\n")
+        return
+
+    print_header(f"📋 Found {len(results)} Transaction(s)", icon="📄")
+    for txn in results:
+        print(f"{txn['date']} | {txn['type'].capitalize():<7} | {txn['category']:<15} | "
+              f"{txn['amount']:>8} {profile['currency']} | {txn['description']}")
+    print('-'*60)
+    print(f"Total: {len(results)} record(s)\n")
+
+
+
+    while True:
+        print('\n' + '='*50) 
+        print(f'Transactions Page - Profile: {profile["profile_name"]}')
+        print('='*50)
+        print('1. Add Expense') 
+        print('2. Add Income')
+        print('3. View All Transactions')
+        print('4. Search / Filter Transactions')
+        print('5. Edit or Delete Transaction')
+        print('6. Back to Home Page')
+        choice = input('Please select an option: ')
+        
+        if choice == '1':
+            if add_transaction(user, profile, 'expense'):
+                print('Expense added successfully!')
+            else:
+                print('Failed to add expense.')
+        elif choice == '2':
+            if add_transaction(user, profile, 'income'):
+                print('Income added successfully!')
+            else:
+                print('Failed to add income.')
+        elif choice == '3':
+            print('\n--- All Transactions ---')
+            if not os.path.exists(TRANSACTIONS_FILE):
+                print('No transactions found!')
+            else:
+                with open(TRANSACTIONS_FILE, 'r') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    found = False
+                    for row in reader:
+                        cleaned_row = {key.strip(): value for key, value in row.items()}
+                        if cleaned_row.get('profile_id') == profile['profile_id']:
+                            display_transaction(cleaned_row, profile)
+                            found = True
+                    if not found:
+                        print('You have no transactions in this profile!')
+        elif choice == '4':
+            print('Search / Filter Transactions Page')
+            search_filter_transactions(profile)
+
+        elif choice == '5':
+            edit_or_delete_transaction(user, profile)
+        elif choice == '6':
+            print('Returning to Home Page...')
+            break
+        else:
+            print('Invalid choice. Please try again.')
