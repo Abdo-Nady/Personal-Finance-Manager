@@ -156,4 +156,15 @@ def edit_or_delete_transaction(user, profile):
         for txn in all_transactions:
             writer.writerow(txn)
 
+def display_transaction(txn, profile):
+    """Display a transaction in a readable format"""
+    print(f"\nID: {txn['transaction_id']}")
+    print(f"Type: {txn['type'].capitalize()}")
+    print(f"Amount: {txn['amount']} {profile['currency']}")
+    print(f"Category: {txn['category']}")
+    print(f"Date: {txn['date']}")
+    print(f"Description: {txn['description']}")
+    print(f"Payment: {txn['payment_method']}")
+    print('-' * 40)
+
 
