@@ -251,7 +251,7 @@ def search_filter_transactions(profile):
     print(f"Total: {len(results)} record(s)\n")
 
 
-
+def Transactions(user, profile):
     while True:
         print('\n' + '='*50) 
         print(f'Transactions Page - Profile: {profile["profile_name"]}')
