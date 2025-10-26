@@ -3,6 +3,7 @@ import os
 import datetime
 from decimal import Decimal
 from collections import defaultdict
+from financial_health import show_financial_health
 
 TRANSACTIONS_FILE = "data/transaction.csv"
 
@@ -12,25 +13,29 @@ def Reports(user, profile):
     Shows summary of income, expenses, net savings, and top categories.
     """
     if not os.path.exists(TRANSACTIONS_FILE):
-        print("\n⚠️ No transactions file found. Please add some transactions first.")
+        print("\nNo transactions file found. Please add some transactions first.")
         return
     
-    print('\n' + '='*60)
-    print(f'📊 Reports Dashboard - Profile: {profile["profile_name"]}')
-    print('='*60)
-    print("1. View Summary Report")
-    print("2. View Monthly Report")
-    print("3. Back to Home Page")
-    
-    choice = input("Select an option: ")
-    if choice == '1':
-        show_summary_report(profile)
-    elif choice == '2':
-        show_monthly_report(profile)
-    elif choice == '3':
-        return
-    else:
-        print("Invalid option. Please try again.")
+    while True:  
+        print('\n' + '='*60)
+        print(f'📊 Reports Dashboard - Profile: {profile["profile_name"]}')
+        print('='*60)
+        print("1. View Summary Report")
+        print("2. View Monthly Report")
+        print("3. View Financial Health Score")
+        print("4. Back to Home Page")
+        
+        choice = input("Select an option: ")
+        if choice == '1':
+            show_summary_report(profile)
+        elif choice == '2':
+            show_monthly_report(profile)
+        elif choice == '3':
+            show_financial_health(profile)
+        elif choice == '4':
+            break  
+        else:
+            print("Invalid option. Please try again.")
 
 
 def show_summary_report(profile):
