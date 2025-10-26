@@ -27,7 +27,6 @@ def validate_date(date_str):
 def clear_screen():
     """Clear the console screen"""
     os.system('cls' if os.name == 'nt' else 'clear')
-  
 
 def PrintMenu(name: str ,options: list[str]):
     name = name if len(name) % 2 == 0 else name + ' '

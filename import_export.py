@@ -54,7 +54,7 @@ def import_transactions(user, profile):
     print('='*60)
     
     # Get filename from user
-    filename = input('Enter the CSV filename to import: ').strip()
+    filename = input('Enter the CSV filename to import ✎𓂃  ').strip()
     
     if not os.path.exists(filename):
         print(f'\nFile "{filename}" not found!')
@@ -65,7 +65,7 @@ def import_transactions(user, profile):
     print('1. Skip duplicates (recommended)')
     print('2. Import all (may create duplicates)')
     
-    import_mode = input('Select option: ').strip()
+    import_mode = input('Select option ✎𓂃  ').strip()
     skip_duplicates = import_mode == '1'
     
     # Load existing transaction IDs if skipping duplicates
@@ -203,7 +203,7 @@ def ImportExport(user, profile):
         print('3. Back to Home Page')
         print('='*60)
         
-        choice = input('Select an option: ').strip()
+        choice = input('Select an option ✎𓂃  ').strip()
         
         if choice == '1':
             export_transactions(user, profile)

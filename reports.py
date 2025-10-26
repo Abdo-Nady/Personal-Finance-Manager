@@ -31,6 +31,7 @@ def Reports(user, profile):
         
         choice = input("Select an option: ").strip()
         
+        choice = input("Select an option ✎𓂃  ")
         if choice == '1':
             show_summary_report(profile)
         elif choice == '2':

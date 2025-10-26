@@ -406,7 +406,7 @@ def Transactions(user, profile):
         print('7. Back to Home Page')
         print('='*50)
         
-        choice = input('Please select an option: ').strip()
+        choice = input('Please select an option ✎𓂃  ').strip()
         
         if choice == '1':
             if add_transaction(user, profile, 'expense'):

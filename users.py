@@ -1,8 +1,7 @@
 import uuid
 import getpass
 from storage import load_users, save_users, delete_profile_transactions
-from utils import hash_password, verify_password, clear_screen
-
+from utils import PrintMenu, hash_password, verify_password, PrintMesg ,clear_screen
 
 def register():
     """Register a new user with validation"""
@@ -10,26 +9,26 @@ def register():
     
     # Username input with validation
     while True:
-        username = input('Enter a username (3-20 characters): ').strip()
+        username = input('Enter a username (3-20 characters) ✎𓂃: ').strip()
         
         if not username:
-            print('\nUsername cannot be empty!')
+            PrintMesg('Username cannot be empty!')
             continue
             
         if len(username) < 3:
-            print('\nUsername must be at least 3 characters long!')
+            PrintMesg('Username must be at least 3 characters long!')
             continue
             
         if len(username) > 20:
-            print('\nUsername must be at most 20 characters long!')
+            PrintMesg('Username must be at most 20 characters long!')
             continue
             
         if not username.replace('_', '').replace('-', '').isalnum():
-            print('\nUsername can only contain letters, numbers, hyphens and underscores!')
+            PrintMesg('Username can only contain letters, numbers, hyphens and underscores!')
             continue
         
         if any(u["name"] == username for u in users):
-            print('\nUsername already exists! Please choose another.')
+            PrintMesg('Username already exists! Please choose another.')
             continue
         
         break
@@ -54,12 +53,12 @@ def register():
     
     # Create default profile
     while True:
-        profile_name = input('\nEnter profile name: ').strip()
+        profile_name = input('\nEnter profile name ✎𓂃  : ').strip()
         if profile_name:
             break
-        print('\nProfile name cannot be empty!')
+        PrintMesg('Profile name cannot be empty!')
     
-    currency = input('Enter currency (default is USD): ').strip().upper()
+    currency = input('Enter currency (default is USD) ✎𓂃  ').strip().upper()
     if not currency:
         currency = "USD"
     
@@ -75,13 +74,13 @@ def register():
 
     if save_users(users):
         print('\n' + '='*50)
-        print('Registration successful!')
-        print(f'Created default profile "{profile_name}" with currency "{currency}".')
+        PrintMesg('Registration successful!')
+        PrintMesg(f'Created default profile "{profile_name}" with currency "{currency}".')
         print('='*50)
         input('\nPress Enter to continue...')
         return username
     else:
-        print('\nRegistration failed! Please try again.')
+        PrintMesg('\nRegistration failed! Please try again.')
         input('\nPress Enter to continue...')
         return None
 
@@ -99,18 +98,18 @@ def login():
     """Login to existing account"""
     users = load_users()
     
-    username = input('Enter your username: ').strip()
-    password = getpass.getpass('Enter your password: ')
+    username = input('Enter your username ✎𓂃  ').strip()
+    password = getpass.getpass('Enter your password ✎𓂃  ')
     
     for u in users:
         if u["name"] == username and verify_password(password, u["password"]):
             print('\n' + '='*50)
-            print('Login successful!')
+            PrintMesg('Login successful!', 50)
             print('='*50)
             input('\nPress Enter to continue...')
             return username
     
-    print('\nInvalid username or password!')
+    PrintMesg('Invalid username or password!')
     input('\nPress Enter to continue...')
     return None
 
@@ -129,32 +128,31 @@ def profile_menu(user):
     user_data = get_user_data(user)
     
     if not user_data:
-        print("\nError: User data not found! Please login again.")
+        PrintMesg("Error: User data not found! Please login again.")
         input('\nPress Enter to continue...')
         return None
     
     while True:
         clear_screen()
-        print('\n' + '='*50)
-        print('Profile Management')
-        print('='*50)
-        print('Your Profiles:')
-        for idx, profile in enumerate(user_data["profiles"], 1):
-            print(f'{idx}. {profile["profile_name"]} (Currency: {profile["currency"]})')
-        print('='*50)
-        print(f'{len(user_data["profiles"]) + 1}. Create New Profile')
-        print(f'{len(user_data["profiles"]) + 2}. Delete Profile')
-        print(f'{len(user_data["profiles"]) + 3}. Logout')
-        print('='*50)
+
+        PrintMesg('Profile Management')
         
-        choice = input('Select a profile number or option: ').strip()
+        userPrfiles = []
+        
+        for __, profile in enumerate(user_data["profiles"], 1):
+            userPrfiles.append(f'{profile["profile_name"]} (Currency: {profile["currency"]})')
+        userPrfiles.append('Create New Profile')
+        userPrfiles.append('Delete Profile')
+        userPrfiles.append('Logout')
+        PrintMenu('Your Profiles',userPrfiles)
+        choice = input('Select a profile number or option ✎𓂃  ').strip()
         
         try:
             choice_num = int(choice)
             
             if 1 <= choice_num <= len(user_data["profiles"]):
                 selected_profile = user_data["profiles"][choice_num - 1]
-                print(f'\nSwitched to profile: {selected_profile["profile_name"]}')
+                PrintMesg(f'Switched to profile: {selected_profile["profile_name"]}')
                 input('\nPress Enter to continue...')
                 return selected_profile
                 
@@ -173,16 +171,16 @@ def profile_menu(user):
                     return None
                     
             elif choice_num == len(user_data["profiles"]) + 3:
-                print('\nLogging out...')
+                PrintMesg('Logging out...')
                 input('\nPress Enter to continue...')
                 return None
                 
             else:
-                print('\nInvalid choice. Please try again.')
+                PrintMesg('Invalid choice. Please try again.')
                 input('\nPress Enter to continue...')
                 
         except ValueError:
-            print('\nInvalid input. Please enter a number.')
+            PrintMesg('Invalid input. Please enter a number.')
             input('\nPress Enter to continue...')
 
 
@@ -191,9 +189,9 @@ def create_new_profile(user):
     users = load_users()
     
     # Profile name input
-    profile_name = input('\nEnter profile name: ').strip()
+    profile_name = input('Enter profile name ✎𓂃  ').strip()
     if not profile_name:
-        print('\nProfile name cannot be empty!')
+        PrintMesg('Profile name cannot be empty!')
         input('\nPress Enter to continue...')
         return
     
@@ -202,12 +200,12 @@ def create_new_profile(user):
     if user_data:
         existing_names = [p['profile_name'].lower() for p in user_data.get('profiles', [])]
         if profile_name.lower() in existing_names:
-            print(f'\nProfile "{profile_name}" already exists!')
+            PrintMesg(f'Profile "{profile_name}" already exists!')
             input('\nPress Enter to continue...')
             return
     
     # Currency input
-    currency = input('Enter currency (default is USD): ').strip().upper()
+    currency = input('Enter currency (default is USD) ✎𓂃  ').strip().upper()
     if not currency:
         currency = "USD"
     
@@ -218,13 +216,13 @@ def create_new_profile(user):
         if u["name"] == user:
             u["profiles"].append(new_profile)
             if save_users(users):
-                print(f'\nProfile "{profile_name}" created successfully!')
+                 PrintMesg(f'Profile "{profile_name}" created successfully!')
             else:
                 print('\nFailed to create profile!')
             input('\nPress Enter to continue...')
             return
     
-    print('\nError: User not found!')
+    PrintMesg('Error: User not found!')
     input('\nPress Enter to continue...')
 
 
@@ -238,15 +236,15 @@ def delete_profile(user):
         return
     
     if len(user_data["profiles"]) <= 1:
-        print('\nCannot delete the last profile! You must have at least one profile.')
+        PrintMesg('Cannot delete the last profile! You must have at least one profile.')
         input('\nPress Enter to continue...')
         return
     
     print('\n' + '='*50)
-    print('Select profile to delete:')
+    PrintMesg('Select profile to delete:')
     print('='*50)
     for idx, profile in enumerate(user_data["profiles"], 1):
-        print(f'{idx}. {profile["profile_name"]} (Currency: {profile["currency"]})')
+        PrintMesg(f'{idx}. {profile["profile_name"]} (Currency: {profile["currency"]})')
     print('='*50)
     
     choice = input('\nEnter profile number to delete (or 0 to cancel): ').strip()
@@ -287,19 +285,19 @@ def delete_profile(user):
                     del u["profiles"][choice_num - 1]
                     
                     if save_users(users):
-                        print(f'\nProfile "{profile_to_delete["profile_name"]}" deleted successfully!')
+                        PrintMesg(f'Profile "{profile_to_delete["profile_name"]}" deleted successfully!')
                     else:
                         print('\nFailed to delete profile!')
                     
                     input('\nPress Enter to continue...')
                     return
             
-            print('\nAuthentication failed! Profile not deleted.')
+            PrintMesg('Authentication failed! Profile not deleted.')
             input('\nPress Enter to continue...')
         else:
-            print('\nInvalid choice.')
+            PrintMesg('Invalid choice.')
             input('\nPress Enter to continue...')
             
     except ValueError:
-        print('Invalid input. Please enter a number.')
+        PrintMesg('Invalid input. Please enter a number.')
         input('\nPress Enter to continue...')

@@ -4,29 +4,19 @@ from transactions import Transactions
 from reports import Reports
 from import_export import ImportExport
 from recurring_transactions import execute_due_recurring_transactions
-from utils import clear_screen
+from utils import clear_screen, PrintMenu, PrintMesg
 
-def menu():   
-    print('Welcome to the Expense Tracker!')
-    print('1. Login')
-    print('2. Register')
-    print('3. Exit')
-    return input('Please select an option: ')
+def menu():
+    PrintMenu('Expense Tracker Main Menu', ['Login', 'Register', 'Exit'])
+    return input('Please select an option ✎𓂃  ')
+
 
 def HomePage(user, profile):
     while True:
-        clear_screen()
-        print('\n' + '='*50)
-        print('Welcome to your Expense Tracker Home Page!')
-        print(f'User: {user} | Profile: {profile["profile_name"]} | Currency: {profile["currency"]}')
-        print('='*50)
-        print('1. Transactions')
-        print('2. Reports')
-        print('3. Import/Export')
-        print('4. Switch Profile')
-        print('5. Logout')
-        print('='*50)
-        choice = input('Please select an option: ')
+        PrintMesg('Welcome to your Expense Tracker Home Page!',length= 75 ,printFotr=False)
+        PrintMesg(f'User: {user} | Profile: {profile["profile_name"]} | Currency: {profile["currency"]}',length= 75 ,printHedr=False)
+        PrintMenu('Home User Page Menu', ['Transactions', 'Reports', 'Import/Export', 'Switch Profile', 'Logout'])
+        choice = input('Please select an option ✎𓂃  ')
         
         if choice == '1':
             Transactions(user, profile)

@@ -39,5 +39,29 @@
                 "currency": "USD"
             }
         ]
+    },
+    {
+        "user_id": "b431417a-e5bc-4924-927a-3a533242f44d",
+        "name": "test",
+        "password": "$2b$12$NvqvngMEo0rIo0k.tHN4ne1YCwCkZIY8SW/ySu.S82XdnPYoJUU0.",
+        "profiles": [
+            {
+                "profile_id": "65d81466-984e-412c-b121-3c9c1ac9317f",
+                "profile_name": "test",
+                "currency": "USD"
+            }
+        ]
+    },
+    {
+        "user_id": "01ada7f4-56ab-471d-b460-d9e589703e68",
+        "name": "mina",
+        "password": "$2b$12$azDv./tEFnHKIZ2Bps5jv.YjUyxwD2ONgd7T/c6An2AZ0R9brbN1u",
+        "profiles": [
+            {
+                "profile_id": "5078f569-975b-4bc4-a582-65438a4819c7",
+                "profile_name": "profile1",
+                "currency": "USD"
+            }
+        ]
     }
 ]
