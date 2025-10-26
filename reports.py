@@ -25,7 +25,7 @@ def Reports(user, profile):
         print("3. View Financial Health Score")
         print("4. Back to Home Page")
         
-        choice = input("Select an option: ")
+        choice = input("Select an option ✎𓂃  ")
         if choice == '1':
             show_summary_report(profile)
         elif choice == '2':

@@ -63,5 +63,17 @@
                 "currency": "USD"
             }
         ]
+    },
+    {
+        "user_id": "710c224f-21e4-48db-9481-a7d00a947582",
+        "name": "mina2",
+        "password": "$2b$12$5q0mVkS6xKQbXpxzWEMOl.REY8BmSrs.6qZTTCd7wjycfQn9JdmNO",
+        "profiles": [
+            {
+                "profile_id": "dde4e9d4-51e6-462f-88f7-ffb014f4b9b5",
+                "profile_name": "p1",
+                "currency": "USD"
+            }
+        ]
     }
 ]

@@ -265,7 +265,7 @@ def Transactions(user, profile):
         print('4. Search / Filter Transactions')
         print('5. Edit or Delete Transaction')
         print('6. Back to Home Page')
-        choice = input('Please select an option: ')
+        choice = input('Please select an option ✎𓂃  ')
         
         if choice == '1':
             if add_transaction(user, profile, 'expense'):
