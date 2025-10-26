@@ -6,7 +6,7 @@ import getpass
 from utils import verify_password
 from storage import load_users
 from storage import TRANSACTIONS_FILE
-from utils import print_header
+
 
 def add_transaction(user, profile, type_):
     transaction_id = f'TXN{int(datetime.datetime.now().timestamp())}'
@@ -174,7 +174,9 @@ def search_filter_transactions(profile):
         print("No transactions file found.")
         return
 
-    print_header("🔍 Search / Filter Transactions")
+    print('\n' + '='*60)
+    print('Search / Filter Transactions')
+    print('='*60)
     print("You can leave any field empty to skip that filter.\n")
 
     keyword = input("Keyword (category or description): ").strip().lower()
@@ -243,7 +245,8 @@ def search_filter_transactions(profile):
         print("\nNo transactions match your filters.\n")
         return
 
-    print_header(f"📋 Found {len(results)} Transaction(s)", icon="📄")
+  
+    print('='*60)
     for txn in results:
         print(f"{txn['date']} | {txn['type'].capitalize():<7} | {txn['category']:<15} | "
               f"{txn['amount']:>8} {profile['currency']} | {txn['description']}")
@@ -290,7 +293,7 @@ def Transactions(user, profile):
                     if not found:
                         print('You have no transactions in this profile!')
         elif choice == '4':
-            print('Search / Filter Transactions Page')
+           
             search_filter_transactions(profile)
 
         elif choice == '5':

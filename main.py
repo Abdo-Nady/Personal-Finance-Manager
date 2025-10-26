@@ -2,6 +2,8 @@ from storage import monthly_backup
 from users import register, login, profile_menu
 from transactions import Transactions
 from reports import Reports
+from import_export import ImportExport
+
 
 def menu():
     print('Welcome to the Expense Tracker!')
@@ -18,8 +20,9 @@ def HomePage(user, profile):
         print('='*50)
         print('1. Transactions')
         print('2. Reports')
-        print('3. Switch Profile')
-        print('4. Logout')
+        print('3. Import/Export')
+        print('4. Switch Profile')
+        print('5. Logout')
         print('='*50)
         choice = input('Please select an option: ')
         
@@ -28,12 +31,14 @@ def HomePage(user, profile):
         elif choice == '2':
             Reports(user, profile)
         elif choice == '3':
+            ImportExport(user, profile)
+        elif choice == '4':
             new_profile = profile_menu(user)
             if new_profile:
                 profile = new_profile
             else:
                 return 'logout'
-        elif choice == '4':
+        elif choice == '5':
             print('Logging out...')
             return 'logout'
         else:
