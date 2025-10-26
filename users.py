@@ -73,10 +73,9 @@ def register():
     users.append(user)
 
     if save_users(users):
-        print('\n' + '='*50)
+        clear_screen()
         PrintMesg('Registration successful!')
-        PrintMesg(f'Created default profile "{profile_name}" with currency "{currency}".')
-        print('='*50)
+        PrintMesg(f'Created default profile "{profile_name}" with currency "{currency}".',length=75)
         input('\nPress Enter to continue...')
         return username
     else:
@@ -103,9 +102,7 @@ def login():
     
     for u in users:
         if u["name"] == username and verify_password(password, u["password"]):
-            print('\n' + '='*50)
             PrintMesg('Login successful!', 50)
-            print('='*50)
             input('\nPress Enter to continue...')
             return username
     

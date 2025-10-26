@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import uuid
 import storage
+from utils import clear_screen , PrintMesg , PrintMenu 
 import utils
 import csv
 
@@ -207,18 +208,18 @@ def get_recurring_history(recurring_id):
 def recurring_transactions_menu(username, profile):
     """Main recurring transactions menu"""
     while True:
-        print("\n" + "="*50)
-        print("RECURRING TRANSACTIONS")
-        print("="*50)
+        
+        
         options = [
             "Create New", "View All", "Pause/Resume",
             "Edit", "Delete", "View History",
             "Execute Due Now", "Back"
         ]
-        for i, opt in enumerate(options, 1):
-            print(f"{i}. {opt}")
-        print("="*50)
-        
+          
+        PrintMenu('Recurring Transactions Menu', options)
+            
+      
+       
         choice = input("Choose: ").strip()
         
         actions = {
@@ -242,6 +243,8 @@ def _create_ui(username, profile):
     if not name:
         print("\nName is required!")
         return
+    
+    
     
     print("1. Income  2. Expense")
     trans_type = 'income' if input("Type: ").strip() == '1' else 'expense'
@@ -290,6 +293,8 @@ def _view_ui(username, profile):
     print("-" * 75)
     for i, r in enumerate(items, 1):
         print(f"{i:<3} {r['name']:<20} {r['type']:<8} {r['amount']:<10} {r['repeat_interval_days']:<6} {r['next_date']:<12} {r['status']:<10}")
+        
+    input("\nPress Enter to continue...")
 
 def _select_item(username, profile, action_name):
     """Helper to select a recurring transaction"""

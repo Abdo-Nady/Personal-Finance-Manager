@@ -3,7 +3,7 @@ import csv
 import datetime
 from decimal import Decimal
 import getpass
-from utils import verify_password, clear_screen
+from utils import verify_password, clear_screen, PrintMesg, PrintMenu
 from storage import load_users, TRANSACTIONS_FILE, ensure_data_directory
 from recurring_transactions import recurring_transactions_menu
 
@@ -391,20 +391,12 @@ def view_all_transactions(profile):
 
 
 def Transactions(user, profile):
-    """Main transactions menu"""
+    """"""
     while True:
         clear_screen()
-        print('\n' + '='*50) 
-        print(f'Transactions Page - Profile: {profile["profile_name"]}')
-        print('='*50)
-        print('1. Add Expense') 
-        print('2. Add Income')
-        print('3. Add Recurring / Scheduled Transaction')
-        print('4. View All Transactions')
-        print('5. Search / Filter Transactions')
-        print('6. Edit or Delete Transaction')
-        print('7. Back to Home Page')
-        print('='*50)
+        PrintMesg(f'Transactions Page - Profile: {profile["profile_name"]}', length=60)
+        PrintMenu('Main transactions menu',[ 'Add Expense', 'Add Income', 'Add Recurring / Scheduled Transaction',
+                                            'View All Transactions', 'Search / Filter Transactions','Edit or Delete Transaction', 'Back to Home Page'])
         
         choice = input('Please select an option ✎𓂃  ').strip()
         

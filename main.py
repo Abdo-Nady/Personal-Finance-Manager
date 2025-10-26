@@ -14,8 +14,8 @@ def menu():
 def HomePage(user, profile):
     while True:
         clear_screen()
-        PrintMesg('Welcome to your Expense Tracker Home Page!',length= 75 ,printFotr=False)
-        PrintMesg(f'User: {user} | Profile: {profile["profile_name"]} | Currency: {profile["currency"]}',length= 75 ,printHedr=False)
+        PrintMesg('Welcome to your Expense Tracker Home Page!',length= 76 ,printFotr=False)
+        PrintMesg(f'User: {user} | Profile: {profile["profile_name"]} | Currency: {profile["currency"]}',length= 76 ,printHedr=False)
         PrintMenu('Home User Page Menu', ['Transactions', 'Reports', 'Import/Export', 'Switch Profile', 'Logout'])
         choice = input('Please select an option ✎𓂃  ')
         
