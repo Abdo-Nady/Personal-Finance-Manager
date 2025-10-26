@@ -9,3 +9,4 @@ backups/
 last_backup.txt
 test.csv
 data/
+.dist/
