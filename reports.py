@@ -80,4 +80,46 @@ def show_summary_report(profile):
     print()
 
 
+def show_monthly_report(profile):
+    """Show monthly report filtered by month and year"""
+    transactions = load_profile_transactions(profile["profile_id"])
+    if not transactions:
+        print("\nNo transactions found for this profile.")
+        return
+
+    month_input = input("Enter month (MM) [leave blank for current]: ").strip()
+    year_input = input("Enter year (YYYY) [leave blank for current]: ").strip()
+
+    today = datetime.date.today()
+    month = int(month_input) if month_input else today.month
+    year = int(year_input) if year_input else today.year
+
+    filtered = [
+        txn for txn in transactions
+        if datetime.datetime.strptime(txn["date"], "%Y-%m-%d").month == month and
+           datetime.datetime.strptime(txn["date"], "%Y-%m-%d").year == year
+    ]
+
+    if not filtered:
+        print(f"\nNo transactions found for {month:02d}-{year}.")
+        return
+
+    total_income = sum(Decimal(txn["amount"]) for txn in filtered if txn["type"] == "income")
+    total_expense = sum(Decimal(txn["amount"]) for txn in filtered if txn["type"] == "expense")
+    net_savings = total_income - total_expense
+
+    print('\n' + '='*60)
+    print(f'📆 Monthly Report - {month:02d}/{year}')
+    print('='*60)
+    print(f"Total Income : {total_income} {profile['currency']}")
+    print(f"Total Expense: {total_expense} {profile['currency']}")
+    print(f"Net Savings  : {net_savings} {profile['currency']}")
+    print('-'*60)
+
+    print("\n🧾 Transactions:")
+    print('-'*60)
+    for txn in filtered:
+        print(f"{txn['date']} | {txn['type'].capitalize():<7} | {txn['category']:<15} | {txn['amount']:>8} {profile['currency']} | {txn['description']}")
+    print('-'*60)
+
 
