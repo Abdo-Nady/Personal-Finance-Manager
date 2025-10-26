@@ -3,9 +3,10 @@ from users import register, login, profile_menu
 from transactions import Transactions
 from reports import Reports
 from import_export import ImportExport
+from recurring_transactions import execute_due_recurring_transactions
+from utils import clear_screen
 
-
-def menu():
+def menu():   
     print('Welcome to the Expense Tracker!')
     print('1. Login')
     print('2. Register')
@@ -14,6 +15,7 @@ def menu():
 
 def HomePage(user, profile):
     while True:
+        clear_screen()
         print('\n' + '='*50)
         print('Welcome to your Expense Tracker Home Page!')
         print(f'User: {user} | Profile: {profile["profile_name"]} | Currency: {profile["currency"]}')
@@ -46,7 +48,9 @@ def HomePage(user, profile):
 
 if __name__ == '__main__':
     monthly_backup()
+    execute_due_recurring_transactions()
     while True:
+        clear_screen()
         choice = menu()
         if choice == '1':
             user = login()

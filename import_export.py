@@ -3,7 +3,7 @@ import os
 import datetime
 from decimal import Decimal
 from storage import TRANSACTIONS_FILE
-
+from utils import clear_screen
 
 def export_transactions(user, profile):
     """Export all transactions for the current profile to a CSV file"""
@@ -194,6 +194,7 @@ def validate_transaction(txn, line_num):
 def ImportExport(user, profile):
     """Main menu for import/export operations"""
     while True:
+        clear_screen()
         print('\n' + '='*60)
         print(f'Import/Export - Profile: {profile["profile_name"]}')
         print('='*60)

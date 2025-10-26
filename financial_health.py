@@ -3,20 +3,15 @@ import os
 import datetime
 from decimal import Decimal
 from collections import defaultdict
-
+from utils import clear_screen
 TRANSACTIONS_FILE = "data/transaction.csv"
+
 
 
 def calculate_financial_health_score(savings_ratio):
     """
     Calculate Financial Health Score based on savings ratio
-    
-    Savings Ratio Ranges:
-    < 0%      → Score: 0-25   (Critical - Deficit)
-    0-10%     → Score: 25-50  (Weak)
-    10-25%    → Score: 50-75  (Good)
-    25-40%    → Score: 75-90  (Very Good)
-    > 40%     → Score: 90-100 (Excellent)
+
     """
     if savings_ratio < 0:
         # Deficit scenario: score decreases with larger deficit

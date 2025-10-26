@@ -3,47 +3,63 @@ import csv
 import datetime
 from decimal import Decimal
 import getpass
-from utils import verify_password
-from storage import load_users
-from storage import TRANSACTIONS_FILE
+from utils import verify_password, clear_screen
+from storage import load_users, TRANSACTIONS_FILE, ensure_data_directory
+from recurring_transactions import recurring_transactions_menu
 
 
 def add_transaction(user, profile, type_):
+    """Add a new transaction (income or expense)"""
     transaction_id = f'TXN{int(datetime.datetime.now().timestamp())}'
-    amount_input = input('Enter amount: ')
+    
+    # Amount input
+    amount_input = input('Enter amount: ').strip()
     try:
         amount = Decimal(amount_input)
         if amount <= 0:
-            print('Amount must be greater than 0!')
+            print('\nAmount must be greater than 0!')
+            input('\nPress Enter to continue...')
             return False
     except:
-        print('Invalid amount. Please enter a numeric value.')
+        print('\nInvalid amount. Please enter a numeric value.')
+        input('\nPress Enter to continue...')
         return False
     
-    category = input('Enter category: ')
-    if not category.strip():
-        print('Category cannot be empty!')
+    # Category input
+    category = input('Enter category: ').strip()
+    if not category:
+        print('\nCategory cannot be empty!')
+        input('\nPress Enter to continue...')
         return False
     
-    date = input('Enter date (YYYY-MM-DD): ')
+    # Date input
+    date = input('Enter date (YYYY-MM-DD): ').strip()
     try:
         datetime.datetime.strptime(date, '%Y-%m-%d')
     except ValueError:
-        print('Invalid date format. Please use YYYY-MM-DD.')
+        print('\nInvalid date format. Please use YYYY-MM-DD.')
+        input('\nPress Enter to continue...')
         return False
     
-    description = input('Enter description: ')
+    # Description input
+    description = input('Enter description: ').strip()
     
-    payment_method = input('Enter payment method: ')
-    if not payment_method.strip():
-        print('Payment method cannot be empty!')
+    # Payment method input
+    payment_method = input('Enter payment method: ').strip()
+    if not payment_method:
+        print('\nPayment method cannot be empty!')
+        input('\nPress Enter to continue...')
         return False
+    
+    # Ensure data directory exists
+    ensure_data_directory()
     
     file_exists = os.path.exists(TRANSACTIONS_FILE)
     
     try:
-        with open(TRANSACTIONS_FILE, 'a', newline='') as csvfile:
-            fieldnames = ['transaction_id', 'user', 'profile_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
+        with open(TRANSACTIONS_FILE, 'a', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['transaction_id', 'user', 'profile_id', 'type', 'amount', 
+                         'category', 'date', 'description', 'payment_method']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
             if not file_exists or os.stat(TRANSACTIONS_FILE).st_size == 0:
@@ -55,60 +71,110 @@ def add_transaction(user, profile, type_):
                 'profile_id': profile['profile_id'],
                 'type': type_,
                 'amount': str(amount),
-                'category': category,
+                'category': category.strip(),
                 'date': date,
                 'description': description,
-                'payment_method': payment_method
+                'payment_method': payment_method.strip()
             })
         return True
     except Exception as e:
-        print(f'Error writing to file: {e}')
+        print(f'\nError writing to file: {e}')
+        input('\nPress Enter to continue...')
         return False
 
-def edit_or_delete_transaction(user, profile):
-    print('\n--- All Your Transactions ---')
+
+def load_all_transactions():
+    """Load all transactions from CSV file"""
     if not os.path.exists(TRANSACTIONS_FILE):
+        return []
+    
+    transactions = []
+    try:
+        with open(TRANSACTIONS_FILE, 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                cleaned_row = {key.strip(): value.strip() for key, value in row.items()}
+                transactions.append(cleaned_row)
+    except Exception as e:
+        print(f'\nError reading transactions: {e}')
+    
+    return transactions
+
+
+def save_all_transactions(transactions):
+    """Save all transactions to CSV file"""
+    ensure_data_directory()
+    
+    try:
+        with open(TRANSACTIONS_FILE, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['transaction_id', 'user', 'profile_id', 'type', 'amount', 
+                         'category', 'date', 'description', 'payment_method']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for txn in transactions:
+                writer.writerow(txn)
+        return True
+    except Exception as e:
+        print(f'\nError saving transactions: {e}')
+        return False
+
+
+def edit_or_delete_transaction(user, profile):
+    """Edit or delete a transaction"""
+    print('\n--- All Your Transactions ---')
+    
+    all_transactions = load_all_transactions()
+    
+    if not all_transactions:
         print('No transactions found!')
+        input('\nPress Enter to continue...')
         return
     
-    all_transactions = []
-    profile_transactions = []
-        
-    with open(TRANSACTIONS_FILE, 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            cleaned_row = {key.strip(): value for key, value in row.items()}
-            all_transactions.append(cleaned_row)
-            if cleaned_row.get('profile_id') == profile['profile_id']:
-                profile_transactions.append(cleaned_row)
-                display_transaction(cleaned_row, profile)
+    # Filter transactions for current profile
+    profile_transactions = [
+        txn for txn in all_transactions 
+        if txn.get('profile_id') == profile['profile_id']
+    ]
     
     if not profile_transactions:
         print('You have no transactions in this profile!')
+        input('\nPress Enter to continue...')
         return
     
+    # Display transactions
+    for txn in profile_transactions:
+        display_transaction(txn, profile)
+    
+    # Get transaction ID
     txn_id = input('\nEnter the Transaction ID to edit or delete: ').strip()
     if not txn_id:
-        print('Transaction ID cannot be empty!')
+        print('\nTransaction ID cannot be empty!')
+        input('\nPress Enter to continue...')
         return
     
+    # Find target transaction
     target_txn = None
-    for txn in all_transactions:
-        if txn['transaction_id'] == txn_id and txn.get('profile_id') == profile['profile_id']:
+    target_index = -1
+    for i, txn in enumerate(all_transactions):
+        if (txn['transaction_id'] == txn_id and 
+            txn.get('profile_id') == profile['profile_id']):
             target_txn = txn
+            target_index = i
             break
     
- 
     if not target_txn:
-        print('Transaction not found in this profile!')
+        print('\nTransaction not found in this profile!')
+        input('\nPress Enter to continue...')
         return
     
-    action = input('Enter "e" to edit or "d" to delete: ').lower()
+    # Ask for action
+    action = input('\nEnter "e" to edit or "d" to delete: ').lower().strip()
     
     if action == 'e':
         print('\n--- Edit Transaction (press Enter to keep current value) ---')
         
-        new_amount = input(f'Amount (current: {target_txn["amount"]}): ')
+        # Edit amount
+        new_amount = input(f'Amount (current: {target_txn["amount"]}): ').strip()
         if new_amount:
             try:
                 validated_amount = Decimal(new_amount)
@@ -119,9 +185,13 @@ def edit_or_delete_transaction(user, profile):
             except:
                 print('Invalid amount! Keeping current value.')
         
-        target_txn['category'] = input(f'Category (current: {target_txn["category"]}): ') or target_txn['category']
+        # Edit category
+        new_category = input(f'Category (current: {target_txn["category"]}): ').strip()
+        if new_category:
+            target_txn['category'] = new_category
         
-        new_date = input(f'Date (current: {target_txn["date"]}): ')
+        # Edit date
+        new_date = input(f'Date (current: {target_txn["date"]}): ').strip()
         if new_date:
             try:
                 datetime.datetime.strptime(new_date, '%Y-%m-%d')
@@ -129,32 +199,52 @@ def edit_or_delete_transaction(user, profile):
             except ValueError:
                 print('Invalid date format! Keeping current value.')
         
-        target_txn['description'] = input(f'Description (current: {target_txn["description"]}): ') or target_txn['description']
-        target_txn['payment_method'] = input(f'Payment method (current: {target_txn["payment_method"]}): ') or target_txn['payment_method']
-        print('Transaction updated successfully!')
+        # Edit description
+        new_description = input(f'Description (current: {target_txn["description"]}): ').strip()
+        if new_description:
+            target_txn['description'] = new_description
+        
+        # Edit payment method
+        new_payment = input(f'Payment method (current: {target_txn["payment_method"]}): ').strip()
+        if new_payment:
+            target_txn['payment_method'] = new_payment
+        
+        # Save changes
+        all_transactions[target_index] = target_txn
+        if save_all_transactions(all_transactions):
+            print('\nTransaction updated successfully!')
+        else:
+            print('\nFailed to update transaction!')
         
     elif action == 'd':
-        password = getpass.getpass('Enter your password to confirm deletion:  ')
+        # Verify password before deletion
+        password = getpass.getpass('\nEnter your password to confirm deletion: ')
         users = load_users()
+        
+        authenticated = False
         for u in users:
             if u["name"] == user and verify_password(password, u["password"]):
+                authenticated = True
                 break
-        else:
-            print('Authentication failed! Transaction not deleted.')
+        
+        if not authenticated:
+            print('\nAuthentication failed! Transaction not deleted.')
+            input('\nPress Enter to continue...')
             return
-        all_transactions.remove(target_txn)
-        print('Transaction deleted successfully!')
+        
+        # Remove transaction
+        all_transactions.pop(target_index)
+        
+        if save_all_transactions(all_transactions):
+            print('\nTransaction deleted successfully!')
+        else:
+            print('\nFailed to delete transaction!')
         
     else:
-        print('Invalid action!')
-        return
+        print('\nInvalid action!')
     
-    with open(TRANSACTIONS_FILE, 'w', newline='') as csvfile:
-        fieldnames = ['transaction_id', 'user', 'profile_id', 'type', 'amount', 'category', 'date', 'description', 'payment_method']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for txn in all_transactions:
-            writer.writerow(txn)
+    input('\nPress Enter to continue...')
+
 
 def display_transaction(txn, profile):
     """Display a transaction in a readable format"""
@@ -171,7 +261,8 @@ def display_transaction(txn, profile):
 def search_filter_transactions(profile):
     """Search and filter transactions for the given profile"""
     if not os.path.exists(TRANSACTIONS_FILE):
-        print("No transactions file found.")
+        print("\nNo transactions file found.")
+        input('\nPress Enter to continue...')
         return
 
     print('\n' + '='*60)
@@ -190,50 +281,62 @@ def search_filter_transactions(profile):
 
     results = []
 
-    with open(TRANSACTIONS_FILE, "r", encoding="utf-8") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            row = {k.strip(): v.strip() for k, v in row.items()}
-            if row.get("profile_id") != profile["profile_id"]:
-                continue
+    try:
+        with open(TRANSACTIONS_FILE, "r", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                row = {k.strip(): v.strip() for k, v in row.items()}
+                if row.get("profile_id") != profile["profile_id"]:
+                    continue
 
-            try:
-                txn_date = datetime.datetime.strptime(row["date"], "%Y-%m-%d")
-                txn_amount = Decimal(row["amount"])
-            except:
-                continue
-
-            if keyword and not (keyword in row["description"].lower() or keyword in row["category"].lower()):
-                continue
-            if date_from:
                 try:
-                    if txn_date < datetime.datetime.strptime(date_from, "%Y-%m-%d"):
-                        continue
-                except ValueError:
-                    print("⚠️ Invalid 'from' date format, skipping filter.")
-            if date_to:
-                try:
-                    if txn_date > datetime.datetime.strptime(date_to, "%Y-%m-%d"):
-                        continue
-                except ValueError:
-                    print("⚠️ Invalid 'to' date format, skipping filter.")
-            if min_amount:
-                try:
-                    if txn_amount < Decimal(min_amount):
-                        continue
+                    txn_date = datetime.datetime.strptime(row["date"], "%Y-%m-%d")
+                    txn_amount = Decimal(row["amount"])
                 except:
-                    print("⚠️ Invalid minimum amount format.")
-            if max_amount:
-                try:
-                    if txn_amount > Decimal(max_amount):
-                        continue
-                except:
-                    print("⚠️ Invalid maximum amount format.")
-            if txn_type and row["type"].lower() != txn_type:
-                continue
+                    continue
 
-            results.append(row)
+                # Apply filters
+                if keyword and not (keyword in row["description"].lower() or keyword in row["category"].lower()):
+                    continue
+                    
+                if date_from:
+                    try:
+                        if txn_date < datetime.datetime.strptime(date_from, "%Y-%m-%d"):
+                            continue
+                    except ValueError:
+                        print("Invalid 'from' date format, skipping filter.")
+                        
+                if date_to:
+                    try:
+                        if txn_date > datetime.datetime.strptime(date_to, "%Y-%m-%d"):
+                            continue
+                    except ValueError:
+                        print("Invalid 'to' date format, skipping filter.")
+                        
+                if min_amount:
+                    try:
+                        if txn_amount < Decimal(min_amount):
+                            continue
+                    except:
+                        print("Invalid minimum amount format.")
+                        
+                if max_amount:
+                    try:
+                        if txn_amount > Decimal(max_amount):
+                            continue
+                    except:
+                        print("Invalid maximum amount format.")
+                        
+                if txn_type and row["type"].lower() != txn_type:
+                    continue
 
+                results.append(row)
+    except Exception as e:
+        print(f"\nError reading transactions: {e}")
+        input('\nPress Enter to continue...')
+        return
+
+    # Sort results
     if sort_by in ["date", "amount"]:
         reverse = sort_order == "desc"
         if sort_by == "date":
@@ -242,64 +345,99 @@ def search_filter_transactions(profile):
             results.sort(key=lambda x: Decimal(x["amount"]), reverse=reverse)
 
     if not results:
-        print("\nNo transactions match your filters.\n")
+        print("\nNo transactions match your filters.")
+        input('\nPress Enter to continue...')
         return
 
-  
-    print('='*60)
-    for txn in results:
-        print(f"{txn['date']} | {txn['type'].capitalize():<7} | {txn['category']:<15} | "
-              f"{txn['amount']:>8} {profile['currency']} | {txn['description']}")
+    # Display results
+    print('\n' + '='*60)
+    print(f"{'Date':<12} | {'Type':<7} | {'Category':<15} | {'Amount':<12} | {'Description'}")
     print('-'*60)
-    print(f"Total: {len(results)} record(s)\n")
+    for txn in results:
+        print(f"{txn['date']:<12} | {txn['type'].capitalize():<7} | {txn['category']:<15} | "
+              f"{txn['amount']:>8} {profile['currency']:<3} | {txn['description']}")
+    print('-'*60)
+    print(f"Total: {len(results)} record(s)")
+    
+    input('\nPress Enter to continue...')
+
+
+def view_all_transactions(profile):
+    """View all transactions for current profile"""
+    print('\n--- All Transactions ---')
+    
+    transactions = load_all_transactions()
+    
+    if not transactions:
+        print('No transactions found!')
+        input('\nPress Enter to continue...')
+        return
+    
+    profile_transactions = [
+        txn for txn in transactions 
+        if txn.get('profile_id') == profile['profile_id']
+    ]
+    
+    if not profile_transactions:
+        print('You have no transactions in this profile!')
+        input('\nPress Enter to continue...')
+        return
+    
+    for txn in profile_transactions:
+        display_transaction(txn, profile)
+    
+    print(f'\nTotal: {len(profile_transactions)} transaction(s)')
+    input('\nPress Enter to continue...')
 
 
 def Transactions(user, profile):
+    """Main transactions menu"""
     while True:
+        clear_screen()
         print('\n' + '='*50) 
         print(f'Transactions Page - Profile: {profile["profile_name"]}')
         print('='*50)
         print('1. Add Expense') 
         print('2. Add Income')
-        print('3. View All Transactions')
-        print('4. Search / Filter Transactions')
-        print('5. Edit or Delete Transaction')
-        print('6. Back to Home Page')
-        choice = input('Please select an option: ')
+        print('3. Add Recurring / Scheduled Transaction')
+        print('4. View All Transactions')
+        print('5. Search / Filter Transactions')
+        print('6. Edit or Delete Transaction')
+        print('7. Back to Home Page')
+        print('='*50)
+        
+        choice = input('Please select an option: ').strip()
         
         if choice == '1':
             if add_transaction(user, profile, 'expense'):
-                print('Expense added successfully!')
+                print('\nExpense added successfully!')
+                input('\nPress Enter to continue...')
             else:
-                print('Failed to add expense.')
+                print('\nFailed to add expense.')
+                
         elif choice == '2':
             if add_transaction(user, profile, 'income'):
-                print('Income added successfully!')
+                print('\nIncome added successfully!')
+                input('\nPress Enter to continue...')
             else:
-                print('Failed to add income.')
+                print('\nFailed to add income.')
+                
         elif choice == '3':
-            print('\n--- All Transactions ---')
-            if not os.path.exists(TRANSACTIONS_FILE):
-                print('No transactions found!')
-            else:
-                with open(TRANSACTIONS_FILE, 'r') as csvfile:
-                    reader = csv.DictReader(csvfile)
-                    found = False
-                    for row in reader:
-                        cleaned_row = {key.strip(): value for key, value in row.items()}
-                        if cleaned_row.get('profile_id') == profile['profile_id']:
-                            display_transaction(cleaned_row, profile)
-                            found = True
-                    if not found:
-                        print('You have no transactions in this profile!')
+            recurring_transactions_menu(user, profile)
+            
         elif choice == '4':
-           
+            view_all_transactions(profile)
+            
+        elif choice == '5':
             search_filter_transactions(profile)
 
-        elif choice == '5':
-            edit_or_delete_transaction(user, profile)
         elif choice == '6':
-            print('Returning to Home Page...')
+            edit_or_delete_transaction(user, profile)
+            
+        elif choice == '7':
+            print('\nReturning to Home Page...')
             break
+            
         else:
-            print('Invalid choice. Please try again.')
+            print('\nInvalid choice. Please try again.')
+            input('\nPress Enter to continue...')
