@@ -123,3 +123,16 @@ def show_monthly_report(profile):
     print('-'*60)
 
 
+def load_profile_transactions(profile_id):
+    """Helper function to load all transactions for a given profile_id"""
+    transactions = []
+    if not os.path.exists(TRANSACTIONS_FILE):
+        return transactions
+
+    with open(TRANSACTIONS_FILE, 'r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            cleaned = {k.strip(): v.strip() for k, v in row.items()}
+            if cleaned.get("profile_id") == profile_id:
+                transactions.append(cleaned)
+    return transactions
