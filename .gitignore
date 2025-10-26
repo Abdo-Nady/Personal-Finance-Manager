@@ -7,4 +7,6 @@ __pycache__/
 .pytest_cache/
 backups/
 last_backup.txt
-
+test.csv
+data/
+.dist/
